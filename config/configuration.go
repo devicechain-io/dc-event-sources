@@ -6,6 +6,10 @@
 
 package config
 
+const (
+	KAFKA_TOPIC_INBOUND_EVENTS = "inbound-events"
+)
+
 type NestedConfiguration struct {
 	Test string
 }

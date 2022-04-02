@@ -5,7 +5,9 @@ go 1.17
 require (
 	github.com/devicechain-io/dc-k8s v0.0.0
 	github.com/devicechain-io/dc-microservice v0.0.0
+	github.com/google/uuid v1.1.2
 	github.com/graph-gophers/graphql-go v1.3.0
+	github.com/segmentio/kafka-go v0.4.30
 )
 
 require (
@@ -25,6 +27,7 @@ require (
 	github.com/googleapis/gnostic v0.5.5 // indirect
 	github.com/imdario/mergo v0.3.12 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
+	github.com/klauspost/compress v1.14.2 // indirect
 	github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de // indirect
 	github.com/mattn/go-colorable v0.1.12 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
@@ -33,6 +36,7 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/olekukonko/tablewriter v0.0.5 // indirect
 	github.com/opentracing/opentracing-go v1.1.0 // indirect
+	github.com/pierrec/lz4/v4 v4.1.14 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/rs/zerolog v1.26.1 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect

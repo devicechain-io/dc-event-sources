@@ -10,16 +10,22 @@ import (
 	"context"
 
 	gql "github.com/graph-gophers/graphql-go"
+	"github.com/segmentio/kafka-go"
 
+	"github.com/devicechain-io/dc-event-sources/config"
 	"github.com/devicechain-io/dc-event-sources/graphql"
 	"github.com/devicechain-io/dc-microservice/core"
 	gqlcore "github.com/devicechain-io/dc-microservice/graphql"
+	kcore "github.com/devicechain-io/dc-microservice/kafka"
 )
 
 var (
 	Microservice *core.Microservice
 
 	GraphQLManager *gqlcore.GraphQLManager
+	KakfaManager   *kcore.KafkaManager
+
+	InboundEventsWriter *kafka.Writer
 )
 
 func main() {
@@ -45,8 +51,25 @@ func main() {
 	Microservice.Run()
 }
 
+// Create kafka components used by this microservice.
+func createKafkaComponents(kmgr *kcore.KafkaManager) error {
+	ievents, err := kmgr.NewWriter(kmgr.NewScopedTopic(config.KAFKA_TOPIC_INBOUND_EVENTS))
+	if err != nil {
+		return err
+	}
+	InboundEventsWriter = ievents
+	return nil
+}
+
 // Called after microservice has been initialized.
 func afterMicroserviceInitialized(ctx context.Context) error {
+	// Create and initialize kafka manager.
+	KakfaManager = kcore.NewKafkaManager(Microservice, core.NewNoOpLifecycleCallbacks(), createKafkaComponents)
+	err := KakfaManager.Initialize(ctx)
+	if err != nil {
+		return err
+	}
+
 	// Map of providers that will be injected into graphql http context.
 	providers := map[gqlcore.ContextKey]interface{}{}
 
@@ -54,7 +77,7 @@ func afterMicroserviceInitialized(ctx context.Context) error {
 	schema := gqlcore.CommonTypes + graphql.SchemaContent
 	parsed := gql.MustParseSchema(schema, &graphql.SchemaResolver{})
 	GraphQLManager = gqlcore.NewGraphQLManager(Microservice, core.NewNoOpLifecycleCallbacks(), *parsed, providers)
-	err := GraphQLManager.Initialize(ctx)
+	err = GraphQLManager.Initialize(ctx)
 	if err != nil {
 		return err
 	}
@@ -63,8 +86,14 @@ func afterMicroserviceInitialized(ctx context.Context) error {
 
 // Called after microservice has been started.
 func afterMicroserviceStarted(ctx context.Context) error {
+	// Start kafka manager.
+	err := KakfaManager.Start(ctx)
+	if err != nil {
+		return err
+	}
+
 	// Start graphql manager.
-	err := GraphQLManager.Start(ctx)
+	err = GraphQLManager.Start(ctx)
 	if err != nil {
 		return err
 	}
@@ -80,6 +109,12 @@ func beforeMicroserviceStopped(ctx context.Context) error {
 		return err
 	}
 
+	// Stop kafka manager.
+	err = KakfaManager.Stop(ctx)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -87,6 +122,12 @@ func beforeMicroserviceStopped(ctx context.Context) error {
 func beforeMicroserviceTerminated(ctx context.Context) error {
 	// Terminate graphql manager.
 	err := GraphQLManager.Terminate(ctx)
+	if err != nil {
+		return err
+	}
+
+	// Terminate kafka manager.
+	err = KakfaManager.Terminate(ctx)
 	if err != nil {
 		return err
 	}
