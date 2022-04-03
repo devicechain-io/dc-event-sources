@@ -37,8 +37,9 @@ func NewEventSourcesConfiguration() *EventSourcesConfiguration {
 				Id:   "mqtt1",
 				Type: "mqtt",
 				Configuration: map[string]string{
-					"host": "dc-mosquitto.dc-system",
-					"port": "1883",
+					"host":  "dc-mosquitto.dc-system",
+					"port":  "1883",
+					"topic": "devicechain/events",
 				},
 				Decoder: EventDecoder{
 					Type:          "json",

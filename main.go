@@ -9,8 +9,10 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	gql "github.com/graph-gophers/graphql-go"
+	"github.com/rs/zerolog/log"
 	"github.com/segmentio/kafka-go"
 
 	"github.com/devicechain-io/dc-event-sources/config"
@@ -70,12 +72,15 @@ func parseConfiguration() error {
 func buildEventSources() error {
 	created := make([]core.LifecycleComponent, 0)
 	for _, source := range Configuration.EventSources {
-		if source.Type == sources.TYPE_MQTT {
+		switch source.Type {
+		case sources.TYPE_MQTT:
 			mqtt, err := sources.NewMqttEventSource(source.Configuration)
 			if err != nil {
 				return err
 			}
 			created = append(created, mqtt)
+		default:
+			log.Warn().Msg(fmt.Sprintf("Unkown event source type: %s", source.Type))
 		}
 	}
 	EventSources = created
