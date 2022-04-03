@@ -10,19 +10,42 @@ const (
 	KAFKA_TOPIC_INBOUND_EVENTS = "inbound-events"
 )
 
-type NestedConfiguration struct {
-	Test string
+// Decodes event payloads into standardized format.
+type EventDecoder struct {
+	Type          string
+	Configuration map[string]string
+}
+
+// Source that reads events from a protocol and decodes them.
+type EventSource struct {
+	Id            string
+	Type          string
+	Configuration map[string]string
+	Decoder       EventDecoder
+	Debug         bool
 }
 
 type EventSourcesConfiguration struct {
-	Nested NestedConfiguration
+	EventSources []EventSource
 }
 
 // Creates the default event sources configuration
 func NewEventSourcesConfiguration() *EventSourcesConfiguration {
 	return &EventSourcesConfiguration{
-		Nested: NestedConfiguration{
-			Test: "test",
+		EventSources: []EventSource{
+			{
+				Id:   "mqtt1",
+				Type: "mqtt",
+				Configuration: map[string]string{
+					"host": "dc-mosquitto.dc-system",
+					"port": "1883",
+				},
+				Decoder: EventDecoder{
+					Type:          "json",
+					Configuration: map[string]string{},
+				},
+				Debug: false,
+			},
 		},
 	}
 }

@@ -8,6 +8,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 
 	gql "github.com/graph-gophers/graphql-go"
 	"github.com/segmentio/kafka-go"
@@ -20,7 +21,8 @@ import (
 )
 
 var (
-	Microservice *core.Microservice
+	Microservice  *core.Microservice
+	Configuration *config.EventSourcesConfiguration
 
 	GraphQLManager *gqlcore.GraphQLManager
 	KakfaManager   *kcore.KafkaManager
@@ -51,6 +53,17 @@ func main() {
 	Microservice.Run()
 }
 
+// Parses the configuration from raw bytes.
+func parseConfiguration() error {
+	config := &config.EventSourcesConfiguration{}
+	err := json.Unmarshal(Microservice.MicroserviceConfigurationRaw, config)
+	if err != nil {
+		return err
+	}
+	Configuration = config
+	return nil
+}
+
 // Create kafka components used by this microservice.
 func createKafkaComponents(kmgr *kcore.KafkaManager) error {
 	ievents, err := kmgr.NewWriter(kmgr.NewScopedTopic(config.KAFKA_TOPIC_INBOUND_EVENTS))
@@ -63,9 +76,15 @@ func createKafkaComponents(kmgr *kcore.KafkaManager) error {
 
 // Called after microservice has been initialized.
 func afterMicroserviceInitialized(ctx context.Context) error {
+	// Parse configuration.
+	err := parseConfiguration()
+	if err != nil {
+		return err
+	}
+
 	// Create and initialize kafka manager.
 	KakfaManager = kcore.NewKafkaManager(Microservice, core.NewNoOpLifecycleCallbacks(), createKafkaComponents)
-	err := KakfaManager.Initialize(ctx)
+	err = KakfaManager.Initialize(ctx)
 	if err != nil {
 		return err
 	}
