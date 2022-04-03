@@ -15,6 +15,7 @@ import (
 
 	"github.com/devicechain-io/dc-event-sources/config"
 	"github.com/devicechain-io/dc-event-sources/graphql"
+	sources "github.com/devicechain-io/dc-event-sources/sources"
 	"github.com/devicechain-io/dc-microservice/core"
 	gqlcore "github.com/devicechain-io/dc-microservice/graphql"
 	kcore "github.com/devicechain-io/dc-microservice/kafka"
@@ -23,6 +24,7 @@ import (
 var (
 	Microservice  *core.Microservice
 	Configuration *config.EventSourcesConfiguration
+	EventSources  []core.LifecycleComponent
 
 	GraphQLManager *gqlcore.GraphQLManager
 	KakfaManager   *kcore.KafkaManager
@@ -64,6 +66,22 @@ func parseConfiguration() error {
 	return nil
 }
 
+// Use configuration to build event sources.
+func buildEventSources() error {
+	created := make([]core.LifecycleComponent, 0)
+	for _, source := range Configuration.EventSources {
+		if source.Type == sources.TYPE_MQTT {
+			mqtt, err := sources.NewMqttEventSource(source.Configuration)
+			if err != nil {
+				return err
+			}
+			created = append(created, mqtt)
+		}
+	}
+	EventSources = created
+	return nil
+}
+
 // Create kafka components used by this microservice.
 func createKafkaComponents(kmgr *kcore.KafkaManager) error {
 	ievents, err := kmgr.NewWriter(kmgr.NewScopedTopic(config.KAFKA_TOPIC_INBOUND_EVENTS))
@@ -78,6 +96,12 @@ func createKafkaComponents(kmgr *kcore.KafkaManager) error {
 func afterMicroserviceInitialized(ctx context.Context) error {
 	// Parse configuration.
 	err := parseConfiguration()
+	if err != nil {
+		return err
+	}
+
+	// Build event sources from configuration.
+	err = buildEventSources()
 	if err != nil {
 		return err
 	}
@@ -100,6 +124,15 @@ func afterMicroserviceInitialized(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+
+	// Initialize each event source.
+	for _, source := range EventSources {
+		err = source.Initialize(ctx)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -117,11 +150,27 @@ func afterMicroserviceStarted(ctx context.Context) error {
 		return err
 	}
 
+	// Start each event source.
+	for _, source := range EventSources {
+		err = source.Start(ctx)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
 // Called before microservice has been stopped.
 func beforeMicroserviceStopped(ctx context.Context) error {
+	// Stop each event source.
+	for _, source := range EventSources {
+		err := source.Stop(ctx)
+		if err != nil {
+			return err
+		}
+	}
+
 	// Stop graphql manager.
 	err := GraphQLManager.Stop(ctx)
 	if err != nil {
@@ -139,6 +188,14 @@ func beforeMicroserviceStopped(ctx context.Context) error {
 
 // Called before microservice has been terminated.
 func beforeMicroserviceTerminated(ctx context.Context) error {
+	// Terminate each event source.
+	for _, source := range EventSources {
+		err := source.Terminate(ctx)
+		if err != nil {
+			return err
+		}
+	}
+
 	// Terminate graphql manager.
 	err := GraphQLManager.Terminate(ctx)
 	if err != nil {
