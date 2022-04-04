@@ -106,8 +106,8 @@ func buildEventSources() error {
 }
 
 // Called by event sources when an event is successfully decoded.
-func onEventDecoded(event *model.Event) {
-	log.Info().Msg(fmt.Sprintf("Successfully decoded event: %+v", event))
+func onEventDecoded(event *model.Event, payload interface{}) {
+	log.Info().Msg(fmt.Sprintf("Successfully decoded event: %+v payload: %+v", event, payload))
 }
 
 // Create kafka components used by this microservice.

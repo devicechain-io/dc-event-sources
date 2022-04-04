@@ -31,11 +31,11 @@ type MqttEventSource struct {
 	Decoder Decoder
 
 	lifecycle core.LifecycleManager
-	callback  func(*model.Event)
+	callback  func(*model.Event, interface{})
 }
 
 // Create a new MQTT event source based on the given configuration.
-func NewMqttEventSource(config map[string]string, decoder Decoder, callback func(*model.Event)) (*MqttEventSource, error) {
+func NewMqttEventSource(config map[string]string, decoder Decoder, callback func(*model.Event, interface{})) (*MqttEventSource, error) {
 	port, err := strconv.Atoi(config["port"])
 	if err != nil {
 		return nil, err
@@ -54,13 +54,15 @@ func NewMqttEventSource(config map[string]string, decoder Decoder, callback func
 
 // Called when message is received from topic.
 func (es *MqttEventSource) onMessage(client mqtt.Client, msg mqtt.Message) {
-	log.Info().Msg(fmt.Sprintf("Received message: %s from topic: %s\n", msg.Payload(), msg.Topic()))
-	event, err := es.Decoder.Decode(msg.Payload())
+	if log.Debug().Enabled() {
+		log.Debug().Msg(fmt.Sprintf("Received message: %s from topic: %s\n", msg.Payload(), msg.Topic()))
+	}
+	event, payload, err := es.Decoder.Decode(msg.Payload())
 	if err != nil {
 		log.Error().Err(err).Msg("Unable to decode event message.")
 		return
 	}
-	es.callback(event)
+	es.callback(event, payload)
 }
 
 // Called on successful connection.

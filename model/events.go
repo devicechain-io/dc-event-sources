@@ -26,23 +26,42 @@ const (
 	CommandResponse
 )
 
+var EventTypesByName map[string]EventType
+
 // Base type for events.
 type Event struct {
-	Id            uuid.UUID              `json:"id"`
-	AltId         string                 `json:"altId"`
-	DeviceId      uint                   `json:"deviceId"`
-	AssignmentId  uint                   `json:"assignmentId"`
-	AreaId        uint                   `json:"areaId"`
-	AssetId       uint                   `json:"assetId"`
-	OccuredTime   time.Time              `json:"occuredTime"`
-	ProcessedTime time.Time              `json:"processedTime"`
-	EventType     EventType              `json:"eventType"`
-	Payload       map[string]interface{} `json:"payload"`
+	Id            uuid.UUID
+	AltId         *string
+	Device        string
+	Assignment    *uuid.UUID
+	Customer      *string
+	Area          *string
+	Asset         *string
+	OccuredTime   time.Time
+	ProcessedTime time.Time
+	EventType     EventType
+}
+
+// Event that contains location information.
+type LocationEvent struct {
+	Event
+	Payload LocationPayload
 }
 
 // Payload for location event.
 type LocationPayload struct {
-	Latitude  big.Float `json:"latitude"`
-	Longitude big.Float `json:"longitude"`
-	Elevation big.Float `json:"elevation"`
+	Latitude  big.Float
+	Longitude big.Float
+	Elevation big.Float
+}
+
+// Initializer.
+func init() {
+	EventTypesByName = make(map[string]EventType)
+	EventTypesByName[Location.String()] = Location
+	EventTypesByName[Measurement.String()] = Measurement
+	EventTypesByName[Alert.String()] = Alert
+	EventTypesByName[StateChange.String()] = StateChange
+	EventTypesByName[CommandInvocation.String()] = CommandInvocation
+	EventTypesByName[CommandResponse.String()] = CommandResponse
 }

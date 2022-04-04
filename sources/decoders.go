@@ -9,8 +9,11 @@ package sources
 import (
 	"encoding/json"
 	"fmt"
+	"math/big"
+	"time"
 
 	"github.com/devicechain-io/dc-event-sources/model"
+	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 )
 
@@ -18,10 +21,23 @@ const (
 	DECODER_TYPE_JSON = "json"
 )
 
+// Payload expected for events passed in json format.
+type JsonEvent struct {
+	AltId       *string                `json:"altId,omitempty"`
+	Device      string                 `json:"device"`
+	Assignment  *uuid.UUID             `json:"assignment,omitempty"`
+	Customer    *string                `json:"customer,omitempty"`
+	Area        *string                `json:"area,omitempty"`
+	Asset       *string                `json:"asset,omitempty"`
+	OccuredTime *string                `json:"occuredTime,omitempty"`
+	EventType   string                 `json:"eventType"`
+	Payload     map[string]interface{} `json:"payload"`
+}
+
 // Interface implemented by all decoders.
 type Decoder interface {
 	// Decodes a binary payload into an event.
-	Decode(payload []byte) (*model.Event, error)
+	Decode(payload []byte) (*model.Event, interface{}, error)
 }
 
 // Create a new decoder based on the given type indicator.
@@ -46,13 +62,91 @@ func NewJsonDecoder(config map[string]string) *JsonDecoder {
 	}
 }
 
-// Decode a json payload into an event.
-func (jd *JsonDecoder) Decode(payload []byte) (*model.Event, error) {
-	event := &model.Event{}
-	err := json.Unmarshal(payload, event)
+// Parses a location event.
+func (jd *JsonDecoder) NewLocationPayload(source *JsonEvent) (*model.LocationPayload, error) {
+	payload := &model.LocationPayload{}
+
+	if latitude, ok := source.Payload["latitude"]; ok {
+		if lat, ok := big.NewFloat(0).SetPrec(64).SetString(fmt.Sprintf("%v", latitude)); ok {
+			payload.Latitude = *lat
+		}
+	}
+	if longitude, ok := source.Payload["longitude"]; ok {
+		if lon, ok := big.NewFloat(0).SetPrec(64).SetString(fmt.Sprintf("%v", longitude)); ok {
+			payload.Longitude = *lon
+		}
+	}
+	if elevation, ok := source.Payload["elevation"]; ok {
+		if ele, ok := big.NewFloat(0).SetPrec(64).SetString(fmt.Sprintf("%v", elevation)); ok {
+			payload.Elevation = *ele
+		}
+	}
+
+	return payload, nil
+}
+
+// Parse json event payload.
+func (jd *JsonDecoder) ParseEvent(payload []byte) (*JsonEvent, error) {
+	jevent := &JsonEvent{}
+	err := json.Unmarshal(payload, jevent)
 	if err != nil {
 		return nil, err
 	}
-	log.Info().Msg(fmt.Sprintf("Parsed JSON event:\n\n%+v\n", event))
+	if log.Debug().Enabled() {
+		log.Debug().Msg(fmt.Sprintf("Parsed JSON event:\n\n%+v\n", jevent))
+	}
+	return jevent, nil
+}
+
+// Assemble an event based on json event data.
+func (jd *JsonDecoder) AssembleEvent(jevent *JsonEvent) (*model.Event, error) {
+	event := &model.Event{
+		Id:         uuid.New(),
+		AltId:      jevent.AltId,
+		Device:     jevent.Device,
+		Assignment: jevent.Assignment,
+		Customer:   jevent.Customer,
+		Area:       jevent.Area,
+		Asset:      jevent.Asset,
+	}
+	if etype, ok := model.EventTypesByName[jevent.EventType]; ok {
+		event.EventType = etype
+	} else {
+		return nil, fmt.Errorf("unknown event type in json payload: %s", jevent.EventType)
+	}
+	if jevent.OccuredTime != nil {
+		otime, err := time.Parse(time.RFC3339, *jevent.OccuredTime)
+		if err != nil {
+			return nil, err
+		}
+		event.OccuredTime = otime
+	}
+	event.ProcessedTime = time.Now()
 	return event, nil
+}
+
+// Decode a json payload into an event.
+func (jd *JsonDecoder) Decode(payload []byte) (*model.Event, interface{}, error) {
+	// Parse json payload.
+	jevent, err := jd.ParseEvent(payload)
+	if err != nil {
+		return nil, nil, err
+	}
+	// Assemble event from json data.
+	event, err := jd.AssembleEvent(jevent)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Create payload based on event type.
+	switch event.EventType {
+	case model.Location:
+		payload, err := jd.NewLocationPayload(jevent)
+		if err != nil {
+			return nil, nil, err
+		}
+		return event, payload, nil
+	}
+
+	return nil, nil, fmt.Errorf("unhandled event type: %s", jevent.EventType)
 }
