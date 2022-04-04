@@ -17,6 +17,7 @@ import (
 
 	"github.com/devicechain-io/dc-event-sources/config"
 	"github.com/devicechain-io/dc-event-sources/graphql"
+	"github.com/devicechain-io/dc-event-sources/model"
 	sources "github.com/devicechain-io/dc-event-sources/sources"
 	"github.com/devicechain-io/dc-microservice/core"
 	gqlcore "github.com/devicechain-io/dc-microservice/graphql"
@@ -68,23 +69,45 @@ func parseConfiguration() error {
 	return nil
 }
 
+// Create decoder based on event source configuration.
+func createDecoder(source config.EventSource) (sources.Decoder, error) {
+	switch source.Decoder.Type {
+	case sources.DECODER_TYPE_JSON:
+		return sources.NewJsonDecoder(source.Decoder.Configuration), nil
+	default:
+		return nil, fmt.Errorf("unkown decoder type: %s", source.Type)
+	}
+}
+
 // Use configuration to build event sources.
 func buildEventSources() error {
 	created := make([]core.LifecycleComponent, 0)
 	for _, source := range Configuration.EventSources {
+		// Create decoder.
+		decoder, err := createDecoder(source)
+		if err != nil {
+			return err
+		}
+
+		// Create event source.
 		switch source.Type {
 		case sources.TYPE_MQTT:
-			mqtt, err := sources.NewMqttEventSource(source.Configuration)
+			mqtt, err := sources.NewMqttEventSource(source.Configuration, decoder, onEventDecoded)
 			if err != nil {
 				return err
 			}
 			created = append(created, mqtt)
 		default:
-			log.Warn().Msg(fmt.Sprintf("Unkown event source type: %s", source.Type))
+			return fmt.Errorf("unkown event source type: %s", source.Type)
 		}
 	}
 	EventSources = created
 	return nil
+}
+
+// Called by event sources when an event is successfully decoded.
+func onEventDecoded(event *model.Event) {
+	log.Info().Msg(fmt.Sprintf("Successfully decoded event: %+v", event))
 }
 
 // Create kafka components used by this microservice.

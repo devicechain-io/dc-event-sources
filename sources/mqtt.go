@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/devicechain-io/dc-event-sources/model"
 	"github.com/devicechain-io/dc-microservice/core"
 	"github.com/rs/zerolog/log"
 
@@ -26,13 +27,15 @@ type MqttEventSource struct {
 	BrokerPort int
 	Topic      string
 
-	Client mqtt.Client
+	Client  mqtt.Client
+	Decoder Decoder
 
 	lifecycle core.LifecycleManager
+	callback  func(*model.Event)
 }
 
 // Create a new MQTT event source based on the given configuration.
-func NewMqttEventSource(config map[string]string) (*MqttEventSource, error) {
+func NewMqttEventSource(config map[string]string, decoder Decoder, callback func(*model.Event)) (*MqttEventSource, error) {
 	port, err := strconv.Atoi(config["port"])
 	if err != nil {
 		return nil, err
@@ -42,23 +45,31 @@ func NewMqttEventSource(config map[string]string) (*MqttEventSource, error) {
 		BrokerHost: config["host"],
 		BrokerPort: port,
 		Topic:      config["topic"],
+		Decoder:    decoder,
 	}
 	es.lifecycle = core.NewLifecycleManager("mqtt-event-source", es, core.NewNoOpLifecycleCallbacks())
+	es.callback = callback
 	return es, nil
 }
 
 // Called when message is received from topic.
-var onMessage mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
+func (es *MqttEventSource) onMessage(client mqtt.Client, msg mqtt.Message) {
 	log.Info().Msg(fmt.Sprintf("Received message: %s from topic: %s\n", msg.Payload(), msg.Topic()))
+	event, err := es.Decoder.Decode(msg.Payload())
+	if err != nil {
+		log.Error().Err(err).Msg("Unable to decode event message.")
+		return
+	}
+	es.callback(event)
 }
 
 // Called on successful connection.
-var onConnect mqtt.OnConnectHandler = func(client mqtt.Client) {
+func (es *MqttEventSource) onConnect(client mqtt.Client) {
 	log.Info().Msg("MQTT event source connected successfully.")
 }
 
 // Called when connection is lost.
-var onConnectionLost mqtt.ConnectionLostHandler = func(client mqtt.Client, err error) {
+func (es *MqttEventSource) onConnectionLost(client mqtt.Client, err error) {
 	log.Info().Msg("MQTT event source connection lost.")
 }
 
@@ -72,9 +83,9 @@ func (es *MqttEventSource) ExecuteInitialize(ctx context.Context) error {
 	opts := mqtt.NewClientOptions()
 	opts.AddBroker(fmt.Sprintf("tcp://%s:%d", es.BrokerHost, es.BrokerPort))
 	opts.SetClientID("devicechain")
-	opts.SetDefaultPublishHandler(onMessage)
-	opts.OnConnect = onConnect
-	opts.OnConnectionLost = onConnectionLost
+	opts.SetDefaultPublishHandler(es.onMessage)
+	opts.OnConnect = es.onConnect
+	opts.OnConnectionLost = es.onConnectionLost
 	es.Client = mqtt.NewClient(opts)
 	if token := es.Client.Connect(); token.Wait() && token.Error() != nil {
 		return token.Error()
@@ -90,7 +101,7 @@ func (es *MqttEventSource) Start(ctx context.Context) error {
 
 // Start event source (as called by lifecycle manager)
 func (es *MqttEventSource) ExecuteStart(ctx context.Context) error {
-	token := es.Client.Subscribe(es.Topic, 1, onMessage)
+	token := es.Client.Subscribe(es.Topic, 1, es.onMessage)
 	token.Wait()
 	log.Info().Msg(fmt.Sprintf("MQTT event source subscribed to topic '%s'.", es.Topic))
 	return nil

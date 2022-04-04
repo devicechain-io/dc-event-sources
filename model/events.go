@@ -28,21 +28,21 @@ const (
 
 // Base type for events.
 type Event struct {
-	Id            uuid.UUID
-	AltId         string
-	DeviceId      uint
-	AssignmentId  uint
-	AreaId        uint
-	AssetId       uint
-	OccuredTime   time.Time
-	ProcessedTime time.Time
-	EventType     EventType
-	Payload       interface{}
+	Id            uuid.UUID              `json:"id"`
+	AltId         string                 `json:"altId"`
+	DeviceId      uint                   `json:"deviceId"`
+	AssignmentId  uint                   `json:"assignmentId"`
+	AreaId        uint                   `json:"areaId"`
+	AssetId       uint                   `json:"assetId"`
+	OccuredTime   time.Time              `json:"occuredTime"`
+	ProcessedTime time.Time              `json:"processedTime"`
+	EventType     EventType              `json:"eventType"`
+	Payload       map[string]interface{} `json:"payload"`
 }
 
 // Payload for location event.
 type LocationPayload struct {
-	Latitude  big.Float
-	Longitude big.Float
-	Elevation big.Float
+	Latitude  big.Float `json:"latitude"`
+	Longitude big.Float `json:"longitude"`
+	Elevation big.Float `json:"elevation"`
 }
