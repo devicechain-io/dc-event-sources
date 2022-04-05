@@ -92,7 +92,7 @@ func buildEventSources() error {
 		// Create event source.
 		switch source.Type {
 		case sources.TYPE_MQTT:
-			mqtt, err := sources.NewMqttEventSource(source.Configuration, decoder, onEventDecoded)
+			mqtt, err := sources.NewMqttEventSource(source.Id, source.Configuration, decoder, onEventDecoded)
 			if err != nil {
 				return err
 			}
@@ -106,8 +106,8 @@ func buildEventSources() error {
 }
 
 // Called by event sources when an event is successfully decoded.
-func onEventDecoded(event *model.Event, payload interface{}) {
-	log.Info().Msg(fmt.Sprintf("Successfully decoded event: %+v payload: %+v", event, payload))
+func onEventDecoded(source string, event *model.Event, payload interface{}) {
+	log.Info().Msg(fmt.Sprintf("Successfully decoded event from %s: %+v payload: %+v", source, event, payload))
 }
 
 // Create kafka components used by this microservice.

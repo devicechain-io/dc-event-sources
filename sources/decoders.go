@@ -9,7 +9,7 @@ package sources
 import (
 	"encoding/json"
 	"fmt"
-	"math/big"
+	"strconv"
 	"time"
 
 	"github.com/devicechain-io/dc-event-sources/model"
@@ -23,15 +23,15 @@ const (
 
 // Payload expected for events passed in json format.
 type JsonEvent struct {
-	AltId       *string                `json:"altId,omitempty"`
-	Device      string                 `json:"device"`
-	Assignment  *uuid.UUID             `json:"assignment,omitempty"`
-	Customer    *string                `json:"customer,omitempty"`
-	Area        *string                `json:"area,omitempty"`
-	Asset       *string                `json:"asset,omitempty"`
-	OccuredTime *string                `json:"occuredTime,omitempty"`
-	EventType   string                 `json:"eventType"`
-	Payload     map[string]interface{} `json:"payload"`
+	AltId        *string                `json:"altId,omitempty"`
+	Device       string                 `json:"device"`
+	Assignment   *uuid.UUID             `json:"assignment,omitempty"`
+	Customer     *string                `json:"customer,omitempty"`
+	Area         *string                `json:"area,omitempty"`
+	Asset        *string                `json:"asset,omitempty"`
+	OccurredTime *string                `json:"occurredTime,omitempty"`
+	EventType    string                 `json:"eventType"`
+	Payload      map[string]interface{} `json:"payload"`
 }
 
 // Interface implemented by all decoders.
@@ -67,19 +67,28 @@ func (jd *JsonDecoder) NewLocationPayload(source *JsonEvent) (*model.LocationPay
 	payload := &model.LocationPayload{}
 
 	if latitude, ok := source.Payload["latitude"]; ok {
-		if lat, ok := big.NewFloat(0).SetPrec(64).SetString(fmt.Sprintf("%v", latitude)); ok {
-			payload.Latitude = *lat
+		latstr := fmt.Sprintf("%v", latitude)
+		_, err := strconv.ParseFloat(latstr, 64)
+		if err != nil {
+			return nil, err
 		}
+		payload.Latitude = latstr
 	}
 	if longitude, ok := source.Payload["longitude"]; ok {
-		if lon, ok := big.NewFloat(0).SetPrec(64).SetString(fmt.Sprintf("%v", longitude)); ok {
-			payload.Longitude = *lon
+		lonstr := fmt.Sprintf("%v", longitude)
+		_, err := strconv.ParseFloat(lonstr, 64)
+		if err != nil {
+			return nil, err
 		}
+		payload.Longitude = lonstr
 	}
 	if elevation, ok := source.Payload["elevation"]; ok {
-		if ele, ok := big.NewFloat(0).SetPrec(64).SetString(fmt.Sprintf("%v", elevation)); ok {
-			payload.Elevation = *ele
+		elestr := fmt.Sprintf("%v", elevation)
+		_, err := strconv.ParseFloat(elestr, 64)
+		if err != nil {
+			return nil, err
 		}
+		payload.Elevation = elestr
 	}
 
 	return payload, nil
@@ -114,12 +123,12 @@ func (jd *JsonDecoder) AssembleEvent(jevent *JsonEvent) (*model.Event, error) {
 	} else {
 		return nil, fmt.Errorf("unknown event type in json payload: %s", jevent.EventType)
 	}
-	if jevent.OccuredTime != nil {
-		otime, err := time.Parse(time.RFC3339, *jevent.OccuredTime)
+	if jevent.OccurredTime != nil {
+		otime, err := time.Parse(time.RFC3339, *jevent.OccurredTime)
 		if err != nil {
 			return nil, err
 		}
-		event.OccuredTime = otime
+		event.OccurredTime = otime
 	}
 	event.ProcessedTime = time.Now()
 	return event, nil

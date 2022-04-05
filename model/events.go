@@ -7,7 +7,6 @@
 package model
 
 import (
-	"math/big"
 	"time"
 
 	"github.com/google/uuid"
@@ -37,22 +36,16 @@ type Event struct {
 	Customer      *string
 	Area          *string
 	Asset         *string
-	OccuredTime   time.Time
+	OccurredTime  time.Time
 	ProcessedTime time.Time
 	EventType     EventType
 }
 
-// Event that contains location information.
-type LocationEvent struct {
-	Event
-	Payload LocationPayload
-}
-
 // Payload for location event.
 type LocationPayload struct {
-	Latitude  big.Float
-	Longitude big.Float
-	Elevation big.Float
+	Latitude  string
+	Longitude string
+	Elevation string
 }
 
 // Initializer.

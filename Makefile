@@ -10,6 +10,10 @@ build:
 build-stripped:
 	go build -ldflags '-s -w' -o $(BUILDDIR)/service .
 
+.PHONY: build-protos
+build-protos:
+	protoc --go_out=. ./proto/*.proto
+
 .PHONY: vendor
 vendor:
 	go mod vendor

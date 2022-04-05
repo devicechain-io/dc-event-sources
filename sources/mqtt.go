@@ -23,6 +23,7 @@ const (
 )
 
 type MqttEventSource struct {
+	Id         string
 	BrokerHost string
 	BrokerPort int
 	Topic      string
@@ -31,17 +32,19 @@ type MqttEventSource struct {
 	Decoder Decoder
 
 	lifecycle core.LifecycleManager
-	callback  func(*model.Event, interface{})
+	callback  func(string, *model.Event, interface{})
 }
 
 // Create a new MQTT event source based on the given configuration.
-func NewMqttEventSource(config map[string]string, decoder Decoder, callback func(*model.Event, interface{})) (*MqttEventSource, error) {
+func NewMqttEventSource(id string, config map[string]string, decoder Decoder,
+	callback func(string, *model.Event, interface{})) (*MqttEventSource, error) {
 	port, err := strconv.Atoi(config["port"])
 	if err != nil {
 		return nil, err
 	}
 
 	es := &MqttEventSource{
+		Id:         id,
 		BrokerHost: config["host"],
 		BrokerPort: port,
 		Topic:      config["topic"],
@@ -62,7 +65,7 @@ func (es *MqttEventSource) onMessage(client mqtt.Client, msg mqtt.Message) {
 		log.Error().Err(err).Msg("Unable to decode event message.")
 		return
 	}
-	es.callback(event, payload)
+	es.callback(es.Id, event, payload)
 }
 
 // Called on successful connection.
