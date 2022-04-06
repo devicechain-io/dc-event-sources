@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/devicechain-io/dc-event-sources/model"
-	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 )
 
@@ -25,7 +24,7 @@ const (
 type JsonEvent struct {
 	AltId        *string                `json:"altId,omitempty"`
 	Device       string                 `json:"device"`
-	Assignment   *uuid.UUID             `json:"assignment,omitempty"`
+	Assignment   *string                `json:"assignment,omitempty"`
 	Customer     *string                `json:"customer,omitempty"`
 	Area         *string                `json:"area,omitempty"`
 	Asset        *string                `json:"asset,omitempty"`
@@ -110,7 +109,6 @@ func (jd *JsonDecoder) ParseEvent(payload []byte) (*JsonEvent, error) {
 // Assemble an event based on json event data.
 func (jd *JsonDecoder) AssembleEvent(jevent *JsonEvent) (*model.Event, error) {
 	event := &model.Event{
-		Id:         uuid.New(),
 		AltId:      jevent.AltId,
 		Device:     jevent.Device,
 		Assignment: jevent.Assignment,
@@ -129,6 +127,8 @@ func (jd *JsonDecoder) AssembleEvent(jevent *JsonEvent) (*model.Event, error) {
 			return nil, err
 		}
 		event.OccurredTime = otime
+	} else {
+		event.OccurredTime = time.Now()
 	}
 	event.ProcessedTime = time.Now()
 	return event, nil

@@ -8,8 +8,6 @@ package model
 
 import (
 	"time"
-
-	"github.com/google/uuid"
 )
 
 type EventType int64
@@ -29,10 +27,9 @@ var EventTypesByName map[string]EventType
 
 // Base type for events.
 type Event struct {
-	Id            uuid.UUID
 	AltId         *string
 	Device        string
-	Assignment    *uuid.UUID
+	Assignment    *string
 	Customer      *string
 	Area          *string
 	Asset         *string

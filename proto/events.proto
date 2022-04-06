@@ -2,17 +2,29 @@ syntax="proto3";
 
 option go_package = "/proto";
 
+/**
+ * Incoming event that has been decoded by
+ * an event source.
+ */
 message PInboundEvent {
     string source_id = 1;
-    string event_id = 2;
-    optional string alt_id = 3;
-    string device = 4;
-    optional string assignment = 5;
-    optional string customer = 6;
-    optional string area = 7;
-    optional string asset = 8;
-    string occurred_time = 9;
-    string processed_time = 10;
-    string event_type = 11;
+    optional string alt_id = 2;
+    string device = 3;
+    optional string assignment = 4;
+    optional string customer = 5;
+    optional string area = 6;
+    optional string asset = 7;
+    string occurred_time = 8;
+    string processed_time = 9;
+    string event_type = 10;
     bytes payload = 12;
+}
+
+/**
+ * Payload for a location event.
+ */
+message PLocationPayload {
+    optional string latitude = 1;
+    optional string longitude = 2;
+    optional string elevation = 3;
 }

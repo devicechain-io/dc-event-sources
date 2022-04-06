@@ -6,7 +6,6 @@ require (
 	github.com/devicechain-io/dc-k8s v0.0.0
 	github.com/devicechain-io/dc-microservice v0.0.0
 	github.com/eclipse/paho.mqtt.golang v1.3.5
-	github.com/google/uuid v1.1.2
 	github.com/graph-gophers/graphql-go v1.3.0
 	github.com/rs/zerolog v1.26.1
 	github.com/segmentio/kafka-go v0.4.30

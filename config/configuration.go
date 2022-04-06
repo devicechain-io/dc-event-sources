@@ -25,8 +25,14 @@ type EventSource struct {
 	Debug         bool
 }
 
+type KafkaEventBatching struct {
+	MaxBatchSize   int
+	BatchTimeoutMs int
+}
+
 type EventSourcesConfiguration struct {
-	EventSources []EventSource
+	EventSources         []EventSource
+	InboundEventBatching KafkaEventBatching
 }
 
 // Creates the default event sources configuration
@@ -47,6 +53,10 @@ func NewEventSourcesConfiguration() *EventSourcesConfiguration {
 				},
 				Debug: false,
 			},
+		},
+		InboundEventBatching: KafkaEventBatching{
+			MaxBatchSize:   100,
+			BatchTimeoutMs: 100,
 		},
 	}
 }
