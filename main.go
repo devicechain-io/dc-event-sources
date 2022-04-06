@@ -24,7 +24,6 @@ import (
 	"github.com/devicechain-io/dc-microservice/core"
 	gqlcore "github.com/devicechain-io/dc-microservice/graphql"
 	kcore "github.com/devicechain-io/dc-microservice/kafka"
-	"google.golang.org/protobuf/proto"
 )
 
 var (
@@ -113,25 +112,11 @@ func onEventDecoded(source string, event *model.Event, payload interface{}) {
 	if log.Debug().Enabled() {
 		log.Debug().Msg(fmt.Sprintf("Successfully decoded event from %s: %+v payload: %+v", source, event, payload))
 	}
-	// Encode protobuf event.
-	pbevent := &esproto.PInboundEvent{
-		SourceId:      source,
-		AltId:         event.AltId,
-		Device:        event.Device,
-		Assignment:    event.Assignment,
-		Customer:      event.Customer,
-		Area:          event.Area,
-		Asset:         event.Asset,
-		OccurredTime:  event.OccurredTime.Format(time.RFC3339),
-		ProcessedTime: event.ProcessedTime.Format(time.RFC3339),
-		EventType:     event.EventType.String(),
-	}
 
-	// Marshal event to bytes.
-	bytes, err := proto.Marshal(pbevent)
+	// Marshal event message to protobuf.
+	bytes, err := esproto.MarshalEventToProtobuf(source, event, payload)
 	if err != nil {
-		log.Error().Err(err).Msg("unable to send inbound event message to kafka")
-		return
+		log.Error().Err(err).Msg("unable to marshal event to protobuf")
 	}
 
 	// Create and deliver message.
@@ -139,15 +124,10 @@ func onEventDecoded(source string, event *model.Event, payload interface{}) {
 		Key:   []byte(event.Device),
 		Value: bytes,
 	}
-	switch err := InboundEventsWriter.WriteMessages(context.Background(), msg).(type) {
-	case nil:
-	case kafka.WriteErrors:
+	err = InboundEventsWriter.WriteMessages(context.Background(), msg)
+	if err != nil {
 		log.Error().Err(err).Msg("unable to send inbound event message to kafka")
-	default:
-		log.Error().Err(err).Msg("unable to send inbound event message to kafka")
-	}
-	if log.Debug().Enabled() {
-		log.Debug().Msg("Successfully delivered protobuf event payload.")
+
 	}
 }
 
