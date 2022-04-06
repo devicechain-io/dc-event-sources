@@ -27,6 +27,7 @@ var EventTypesByName map[string]EventType
 
 // Base type for events.
 type Event struct {
+	Source        string
 	AltId         *string
 	Device        string
 	Assignment    *string
@@ -40,9 +41,9 @@ type Event struct {
 
 // Payload for location event.
 type LocationPayload struct {
-	Latitude  string
-	Longitude string
-	Elevation string
+	Latitude  *string
+	Longitude *string
+	Elevation *string
 }
 
 // Initializer.

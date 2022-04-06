@@ -109,12 +109,13 @@ func buildEventSources() error {
 
 // Called by event sources when an event is successfully decoded.
 func onEventDecoded(source string, event *model.Event, payload interface{}) {
+	event.Source = source
 	if log.Debug().Enabled() {
-		log.Debug().Msg(fmt.Sprintf("Successfully decoded event from %s: %+v payload: %+v", source, event, payload))
+		log.Debug().Msg(fmt.Sprintf("Successfully decoded event: %+v payload: %+v", event, payload))
 	}
 
 	// Marshal event message to protobuf.
-	bytes, err := esproto.MarshalEventToProtobuf(source, event, payload)
+	bytes, err := esproto.MarshalEvent(event, payload)
 	if err != nil {
 		log.Error().Err(err).Msg("unable to marshal event to protobuf")
 	}

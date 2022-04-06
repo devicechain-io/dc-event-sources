@@ -71,7 +71,7 @@ func (jd *JsonDecoder) NewLocationPayload(source *JsonEvent) (*model.LocationPay
 		if err != nil {
 			return nil, err
 		}
-		payload.Latitude = latstr
+		payload.Latitude = &latstr
 	}
 	if longitude, ok := source.Payload["longitude"]; ok {
 		lonstr := fmt.Sprintf("%v", longitude)
@@ -79,7 +79,7 @@ func (jd *JsonDecoder) NewLocationPayload(source *JsonEvent) (*model.LocationPay
 		if err != nil {
 			return nil, err
 		}
-		payload.Longitude = lonstr
+		payload.Longitude = &lonstr
 	}
 	if elevation, ok := source.Payload["elevation"]; ok {
 		elestr := fmt.Sprintf("%v", elevation)
@@ -87,7 +87,7 @@ func (jd *JsonDecoder) NewLocationPayload(source *JsonEvent) (*model.LocationPay
 		if err != nil {
 			return nil, err
 		}
-		payload.Elevation = elestr
+		payload.Elevation = &elestr
 	}
 
 	return payload, nil

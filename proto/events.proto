@@ -16,7 +16,7 @@ message PInboundEvent {
     optional string asset = 7;
     string occurred_time = 8;
     string processed_time = 9;
-    string event_type = 10;
+    int64 event_type = 10;
     bytes payload = 12;
 }
 
