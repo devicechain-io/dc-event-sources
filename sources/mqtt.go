@@ -31,13 +31,17 @@ type MqttEventSource struct {
 	Client  mqtt.Client
 	Decoder Decoder
 
+	messages  chan []byte
+	workers   []*DecodeWorker
 	lifecycle core.LifecycleManager
 	callback  func(string, *model.Event, interface{})
+	failed    func(string, []byte, error)
 }
 
 // Create a new MQTT event source based on the given configuration.
 func NewMqttEventSource(id string, config map[string]string, decoder Decoder,
-	callback func(string, *model.Event, interface{})) (*MqttEventSource, error) {
+	callback func(string, *model.Event, interface{}),
+	failed func(string, []byte, error)) (*MqttEventSource, error) {
 	port, err := strconv.Atoi(config["port"])
 	if err != nil {
 		return nil, err
@@ -50,6 +54,7 @@ func NewMqttEventSource(id string, config map[string]string, decoder Decoder,
 		Topic:      config["topic"],
 		Decoder:    decoder,
 	}
+
 	es.lifecycle = core.NewLifecycleManager("mqtt-event-source", es, core.NewNoOpLifecycleCallbacks())
 	es.callback = callback
 	return es, nil
@@ -60,12 +65,7 @@ func (es *MqttEventSource) onMessage(client mqtt.Client, msg mqtt.Message) {
 	if log.Debug().Enabled() {
 		log.Debug().Msg(fmt.Sprintf("Received message: %s from topic: %s\n", msg.Payload(), msg.Topic()))
 	}
-	event, payload, err := es.Decoder.Decode(msg.Payload())
-	if err != nil {
-		log.Error().Err(err).Msg("Unable to decode event message.")
-		return
-	}
-	es.callback(es.Id, event, payload)
+	es.messages <- msg.Payload()
 }
 
 // Called on successful connection.
@@ -104,8 +104,24 @@ func (es *MqttEventSource) Start(ctx context.Context) error {
 	return es.lifecycle.Start(ctx)
 }
 
+// Initialize pool of workers for decoding raw messages.
+func (es *MqttEventSource) initializeDecodeWorkers() {
+	// Make channels and workers for distributed processing.
+	es.messages = make(chan []byte, 100)
+	es.workers = make([]*DecodeWorker, 0)
+	for w := 1; w <= 5; w++ {
+		worker := NewDecodeWorker(w, es.Id, es.Decoder, es.messages, es.callback, es.failed)
+		es.workers = append(es.workers, worker)
+		go worker.Process()
+	}
+}
+
 // Start event source (as called by lifecycle manager)
 func (es *MqttEventSource) ExecuteStart(ctx context.Context) error {
+	// Initialize pool of workers for decoding raw messages.
+	es.initializeDecodeWorkers()
+
+	// Create subscription to start receiving messages.
 	token := es.Client.Subscribe(es.Topic, 1, es.onMessage)
 	token.Wait()
 	log.Info().Msg(fmt.Sprintf("MQTT event source subscribed to topic '%s'.", es.Topic))
@@ -119,7 +135,7 @@ func (es *MqttEventSource) Stop(ctx context.Context) error {
 
 // Stop event source (as called by lifecycle manager)
 func (es *MqttEventSource) ExecuteStop(ctx context.Context) error {
-	log.Info().Msg("MQTT event source stopped.")
+	close(es.messages)
 	return nil
 }
 
@@ -130,6 +146,5 @@ func (es *MqttEventSource) Terminate(ctx context.Context) error {
 
 // Terminate event source (as called by lifecycle manager)
 func (es *MqttEventSource) ExecuteTerminate(ctx context.Context) error {
-	log.Info().Msg("MQTT event source terminated.")
 	return nil
 }

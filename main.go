@@ -94,7 +94,8 @@ func buildEventSources() error {
 		// Create event source.
 		switch source.Type {
 		case sources.TYPE_MQTT:
-			mqtt, err := sources.NewMqttEventSource(source.Id, source.Configuration, decoder, onEventDecoded)
+			mqtt, err := sources.NewMqttEventSource(source.Id, source.Configuration,
+				decoder, onEventDecoded, onEventDecodeFailed)
 			if err != nil {
 				return err
 			}
@@ -129,6 +130,13 @@ func onEventDecoded(source string, event *model.Event, payload interface{}) {
 	if err != nil {
 		log.Error().Err(err).Msg("unable to send inbound event message to kafka")
 
+	}
+}
+
+// Handle failed decoding.
+func onEventDecodeFailed(source string, raw []byte, err error) {
+	if log.Debug().Enabled() {
+		log.Error().Err(err).Msg("Failed to decode event payload.")
 	}
 }
 
