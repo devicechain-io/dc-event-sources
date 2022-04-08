@@ -43,7 +43,7 @@ func (wrk *DecodeWorker) Process() {
 	for {
 		raw, more := <-wrk.RawMessages
 		if more {
-			log.Info().Msg(fmt.Sprint("Handled by worker id %s", wrk.WorkerId))
+			log.Debug().Msg(fmt.Sprintf("Decode handled by worker id %d", wrk.WorkerId))
 			event, payload, err := wrk.Decoder.Decode(raw)
 			if err != nil {
 				wrk.Failed(wrk.SourceId, raw, err)

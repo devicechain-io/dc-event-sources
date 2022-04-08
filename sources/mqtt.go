@@ -34,13 +34,15 @@ type MqttEventSource struct {
 	messages  chan []byte
 	workers   []*DecodeWorker
 	lifecycle core.LifecycleManager
-	callback  func(string, *model.Event, interface{})
+	received  func(string, []byte)
+	decoded   func(string, *model.Event, interface{})
 	failed    func(string, []byte, error)
 }
 
 // Create a new MQTT event source based on the given configuration.
 func NewMqttEventSource(id string, config map[string]string, decoder Decoder,
-	callback func(string, *model.Event, interface{}),
+	received func(string, []byte),
+	decoded func(string, *model.Event, interface{}),
 	failed func(string, []byte, error)) (*MqttEventSource, error) {
 	port, err := strconv.Atoi(config["port"])
 	if err != nil {
@@ -56,7 +58,9 @@ func NewMqttEventSource(id string, config map[string]string, decoder Decoder,
 	}
 
 	es.lifecycle = core.NewLifecycleManager("mqtt-event-source", es, core.NewNoOpLifecycleCallbacks())
-	es.callback = callback
+	es.received = received
+	es.decoded = decoded
+	es.failed = failed
 	return es, nil
 }
 
@@ -65,6 +69,7 @@ func (es *MqttEventSource) onMessage(client mqtt.Client, msg mqtt.Message) {
 	if log.Debug().Enabled() {
 		log.Debug().Msg(fmt.Sprintf("Received message: %s from topic: %s\n", msg.Payload(), msg.Topic()))
 	}
+	es.received(es.Id, msg.Payload())
 	es.messages <- msg.Payload()
 }
 
@@ -110,7 +115,7 @@ func (es *MqttEventSource) initializeDecodeWorkers() {
 	es.messages = make(chan []byte, 100)
 	es.workers = make([]*DecodeWorker, 0)
 	for w := 1; w <= 5; w++ {
-		worker := NewDecodeWorker(w, es.Id, es.Decoder, es.messages, es.callback, es.failed)
+		worker := NewDecodeWorker(w, es.Id, es.Decoder, es.messages, es.decoded, es.failed)
 		es.workers = append(es.workers, worker)
 		go worker.Process()
 	}

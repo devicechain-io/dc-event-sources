@@ -24,6 +24,7 @@ import (
 	"github.com/devicechain-io/dc-microservice/core"
 	gqlcore "github.com/devicechain-io/dc-microservice/graphql"
 	kcore "github.com/devicechain-io/dc-microservice/kafka"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 var (
@@ -34,7 +35,13 @@ var (
 	GraphQLManager *gqlcore.GraphQLManager
 	KakfaManager   *kcore.KafkaManager
 
+	// Kafka.
 	InboundEventsWriter *kafka.Writer
+
+	// Metrics
+	MessagesCounter     *prometheus.CounterVec
+	DecodedCounter      *prometheus.CounterVec
+	FailedDecodeCounter *prometheus.CounterVec
 )
 
 func main() {
@@ -71,6 +78,22 @@ func parseConfiguration() error {
 	return nil
 }
 
+// Initialize metrics.
+func initializeMetrics() {
+	MessagesCounter = Microservice.NewCounterVec(
+		"total_inbound_messages",
+		"Count of total inbound messages from event sources",
+		[]string{"source"})
+	DecodedCounter = Microservice.NewCounterVec(
+		"total_msg_decode_successful",
+		"Count of total messages successfully decoded",
+		[]string{"source"})
+	FailedDecodeCounter = Microservice.NewCounterVec(
+		"total_msg_failed_decode",
+		"Count of total messages that failed to decode",
+		[]string{"source"})
+}
+
 // Create decoder based on event source configuration.
 func createDecoder(source config.EventSource) (sources.Decoder, error) {
 	switch source.Decoder.Type {
@@ -95,7 +118,7 @@ func buildEventSources() error {
 		switch source.Type {
 		case sources.TYPE_MQTT:
 			mqtt, err := sources.NewMqttEventSource(source.Id, source.Configuration,
-				decoder, onEventDecoded, onEventDecodeFailed)
+				decoder, onMessageReceived, onEventDecoded, onEventDecodeFailed)
 			if err != nil {
 				return err
 			}
@@ -108,8 +131,17 @@ func buildEventSources() error {
 	return nil
 }
 
+// Handle accounting for received messages.
+func onMessageReceived(source string, raw []byte) {
+	// Increment counter for metrics.
+	MessagesCounter.WithLabelValues(source).Inc()
+}
+
 // Called by event sources when an event is successfully decoded.
 func onEventDecoded(source string, event *model.Event, payload interface{}) {
+	// Increment counter for metrics.
+	DecodedCounter.WithLabelValues(source).Inc()
+
 	event.Source = source
 	if log.Debug().Enabled() {
 		log.Debug().Msg(fmt.Sprintf("Successfully decoded event: %+v payload: %+v", event, payload))
@@ -135,6 +167,9 @@ func onEventDecoded(source string, event *model.Event, payload interface{}) {
 
 // Handle failed decoding.
 func onEventDecodeFailed(source string, raw []byte, err error) {
+	// Increment counter for metrics.
+	FailedDecodeCounter.WithLabelValues(source).Inc()
+
 	if log.Debug().Enabled() {
 		log.Error().Err(err).Msg("Failed to decode event payload.")
 	}
@@ -166,6 +201,9 @@ func afterMicroserviceInitialized(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+
+	// Initialize metrics.
+	initializeMetrics()
 
 	// Create and initialize kafka manager.
 	KakfaManager = kcore.NewKafkaManager(Microservice, core.NewNoOpLifecycleCallbacks(), createKafkaComponents)
