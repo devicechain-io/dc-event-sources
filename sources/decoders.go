@@ -36,7 +36,7 @@ type JsonEvent struct {
 // Interface implemented by all decoders.
 type Decoder interface {
 	// Decodes a binary payload into an event.
-	Decode(payload []byte) (*model.Event, interface{}, error)
+	Decode(payload []byte) (*model.UnresolvedEvent, interface{}, error)
 }
 
 // Create a new decoder based on the given type indicator.
@@ -107,8 +107,8 @@ func (jd *JsonDecoder) ParseEvent(payload []byte) (*JsonEvent, error) {
 }
 
 // Assemble an event based on json event data.
-func (jd *JsonDecoder) AssembleEvent(jevent *JsonEvent) (*model.Event, error) {
-	event := &model.Event{
+func (jd *JsonDecoder) AssembleEvent(jevent *JsonEvent) (*model.UnresolvedEvent, error) {
+	event := &model.UnresolvedEvent{
 		AltId:      jevent.AltId,
 		Device:     jevent.Device,
 		Assignment: jevent.Assignment,
@@ -135,7 +135,7 @@ func (jd *JsonDecoder) AssembleEvent(jevent *JsonEvent) (*model.Event, error) {
 }
 
 // Decode a json payload into an event.
-func (jd *JsonDecoder) Decode(payload []byte) (*model.Event, interface{}, error) {
+func (jd *JsonDecoder) Decode(payload []byte) (*model.UnresolvedEvent, interface{}, error) {
 	// Parse json payload.
 	jevent, err := jd.ParseEvent(payload)
 	if err != nil {

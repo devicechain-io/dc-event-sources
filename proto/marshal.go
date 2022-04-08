@@ -65,15 +65,15 @@ func UnmarshalPayloadForEventType(etype model.EventType, payload []byte) (interf
 	}
 }
 
-// Marshal an event to protobuf bytes.
-func MarshalEvent(event *model.Event, payload interface{}) ([]byte, error) {
+// Marshal an unresolved event to protobuf bytes.
+func MarshalUnresolvedEvent(event *model.UnresolvedEvent, payload interface{}) ([]byte, error) {
 	plbytes, err := MarshalPayloadForEventType(event.EventType, payload)
 	if err != nil {
 		return nil, err
 	}
 
 	// Encode protobuf event.
-	pbevent := &PInboundEvent{
+	pbevent := &PUnresolvedEvent{
 		SourceId:      event.Source,
 		AltId:         event.AltId,
 		Device:        event.Device,
@@ -95,28 +95,28 @@ func MarshalEvent(event *model.Event, payload interface{}) ([]byte, error) {
 	return bytes, nil
 }
 
-// Unmarshal encoded event.
-func UnmarshalEvent(encoded []byte) (*model.Event, interface{}, error) {
-	pbevent := &PInboundEvent{}
+// Unmarshal encoded unresolved event.
+func UnmarshalUnresolvedEvent(encoded []byte) (*model.UnresolvedEvent, error) {
+	pbevent := &PUnresolvedEvent{}
 	err := proto.Unmarshal(encoded, pbevent)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	etype := model.EventType(pbevent.EventType)
 	payload, err := UnmarshalPayloadForEventType(etype, pbevent.Payload)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	occtime, err := time.Parse(time.RFC3339, pbevent.OccurredTime)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	proctime, err := time.Parse(time.RFC3339, pbevent.ProcessedTime)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	event := &model.Event{
+	event := &model.UnresolvedEvent{
 		Source:        pbevent.SourceId,
 		AltId:         pbevent.AltId,
 		Device:        pbevent.Device,
@@ -126,6 +126,7 @@ func UnmarshalEvent(encoded []byte) (*model.Event, interface{}, error) {
 		Asset:         pbevent.Asset,
 		OccurredTime:  occtime,
 		ProcessedTime: proctime,
+		Payload:       payload,
 	}
-	return event, payload, nil
+	return event, nil
 }

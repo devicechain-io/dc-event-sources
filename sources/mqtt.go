@@ -35,14 +35,14 @@ type MqttEventSource struct {
 	workers   []*DecodeWorker
 	lifecycle core.LifecycleManager
 	received  func(string, []byte)
-	decoded   func(string, *model.Event, interface{})
+	decoded   func(string, *model.UnresolvedEvent, interface{})
 	failed    func(string, []byte, error)
 }
 
 // Create a new MQTT event source based on the given configuration.
 func NewMqttEventSource(id string, config map[string]string, decoder Decoder,
 	received func(string, []byte),
-	decoded func(string, *model.Event, interface{}),
+	decoded func(string, *model.UnresolvedEvent, interface{}),
 	failed func(string, []byte, error)) (*MqttEventSource, error) {
 	port, err := strconv.Atoi(config["port"])
 	if err != nil {

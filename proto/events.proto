@@ -3,10 +3,10 @@ syntax="proto3";
 option go_package = "/proto";
 
 /**
- * Incoming event that has been decoded by
+ * Unresolved event that has been decoded by
  * an event source.
  */
-message PInboundEvent {
+message PUnresolvedEvent {
     string source_id = 1;
     optional string alt_id = 2;
     string device = 3;

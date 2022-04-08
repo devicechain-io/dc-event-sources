@@ -138,7 +138,7 @@ func onMessageReceived(source string, raw []byte) {
 }
 
 // Called by event sources when an event is successfully decoded.
-func onEventDecoded(source string, event *model.Event, payload interface{}) {
+func onEventDecoded(source string, event *model.UnresolvedEvent, payload interface{}) {
 	// Increment counter for metrics.
 	DecodedCounter.WithLabelValues(source).Inc()
 
@@ -148,7 +148,7 @@ func onEventDecoded(source string, event *model.Event, payload interface{}) {
 	}
 
 	// Marshal event message to protobuf.
-	bytes, err := esproto.MarshalEvent(event, payload)
+	bytes, err := esproto.MarshalUnresolvedEvent(event, payload)
 	if err != nil {
 		log.Error().Err(err).Msg("unable to marshal event to protobuf")
 	}

@@ -19,13 +19,13 @@ type DecodeWorker struct {
 	SourceId    string
 	Decoder     Decoder
 	RawMessages <-chan []byte
-	Callback    func(string, *model.Event, interface{})
+	Callback    func(string, *model.UnresolvedEvent, interface{})
 	Failed      func(string, []byte, error)
 }
 
 // Create a new decode worker.
 func NewDecodeWorker(workerId int, sourceId string, decoder Decoder, rawMessages <-chan []byte,
-	callback func(string, *model.Event, interface{}),
+	callback func(string, *model.UnresolvedEvent, interface{}),
 	failed func(string, []byte, error)) *DecodeWorker {
 	worker := &DecodeWorker{
 		WorkerId:    workerId,

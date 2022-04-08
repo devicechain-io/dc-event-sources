@@ -25,8 +25,8 @@ const (
 
 var EventTypesByName map[string]EventType
 
-// Base type for events.
-type Event struct {
+// Unresolved event details.
+type UnresolvedEvent struct {
 	Source        string
 	AltId         *string
 	Device        string
@@ -37,6 +37,7 @@ type Event struct {
 	OccurredTime  time.Time
 	ProcessedTime time.Time
 	EventType     EventType
+	Payload       interface{}
 }
 
 // Payload for location event.
