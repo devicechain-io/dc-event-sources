@@ -11,8 +11,29 @@ import (
 	"time"
 
 	"github.com/devicechain-io/dc-event-sources/model"
+	protobuf "github.com/golang/protobuf/proto"
+	"github.com/rs/zerolog/log"
 	"google.golang.org/protobuf/proto"
 )
+
+// Marshal payload for a new assignment event.
+func MarshalPayloadForNewAssignmentEvent(payload *model.NewAssignmentPayload) ([]byte, error) {
+	pbna := &PNewAssignmentPayload{
+		DeactivateExisting: payload.DeactivateExisting,
+		DeviceGroup:        payload.DeviceGroup,
+		Asset:              payload.Asset,
+		AssetGroup:         payload.AssetGroup,
+		Customer:           payload.Customer,
+		CustomerGroup:      payload.CustomerGroup,
+		Area:               payload.Area,
+		AreaGroup:          payload.AreaGroup,
+	}
+	bytes, err := proto.Marshal(pbna)
+	if err != nil {
+		return nil, err
+	}
+	return bytes, nil
+}
 
 // Marshal payload for a location event.
 func MarshalPayloadForLocationEvent(payload *model.LocationPayload) ([]byte, error) {
@@ -26,6 +47,25 @@ func MarshalPayloadForLocationEvent(payload *model.LocationPayload) ([]byte, err
 		return nil, err
 	}
 	return bytes, nil
+}
+
+// Unmarshal a payload into a new assignment event.
+func UnmarshalPayloadForNewAssignmentEvent(payload []byte) (*model.NewAssignmentPayload, error) {
+	pbassn := &PNewAssignmentPayload{}
+	err := proto.Unmarshal(payload, pbassn)
+	if err != nil {
+		return nil, err
+	}
+	return &model.NewAssignmentPayload{
+		DeactivateExisting: pbassn.DeactivateExisting,
+		DeviceGroup:        pbassn.DeviceGroup,
+		Asset:              pbassn.Asset,
+		AssetGroup:         pbassn.AssetGroup,
+		Customer:           pbassn.Customer,
+		CustomerGroup:      pbassn.CustomerGroup,
+		Area:               pbassn.Area,
+		AreaGroup:          pbassn.AreaGroup,
+	}, nil
 }
 
 // Unmarshal a payload into a location event.
@@ -45,6 +85,11 @@ func UnmarshalPayloadForLocationEvent(payload []byte) (*model.LocationPayload, e
 // Marshals a payload based on what is expected for the given event type.
 func MarshalPayloadForEventType(etype model.EventType, payload interface{}) ([]byte, error) {
 	switch etype {
+	case model.NewAssignment:
+		if napayload, ok := payload.(*model.NewAssignmentPayload); ok {
+			return MarshalPayloadForNewAssignmentEvent(napayload)
+		}
+		return nil, fmt.Errorf("invalid location payload: %+v", payload)
 	case model.Location:
 		if locpayload, ok := payload.(*model.LocationPayload); ok {
 			return MarshalPayloadForLocationEvent(locpayload)
@@ -58,6 +103,8 @@ func MarshalPayloadForEventType(etype model.EventType, payload interface{}) ([]b
 // Unmarshal payload based on event type.
 func UnmarshalPayloadForEventType(etype model.EventType, payload []byte) (interface{}, error) {
 	switch etype {
+	case model.NewAssignment:
+		return UnmarshalPayloadForNewAssignmentEvent(payload)
 	case model.Location:
 		return UnmarshalPayloadForLocationEvent(payload)
 	default:
@@ -78,9 +125,6 @@ func MarshalUnresolvedEvent(event *model.UnresolvedEvent, payload interface{}) (
 		AltId:         event.AltId,
 		Device:        event.Device,
 		Assignment:    event.Assignment,
-		Customer:      event.Customer,
-		Area:          event.Area,
-		Asset:         event.Asset,
 		OccurredTime:  event.OccurredTime.Format(time.RFC3339),
 		ProcessedTime: event.ProcessedTime.Format(time.RFC3339),
 		EventType:     int64(event.EventType),
@@ -92,17 +136,34 @@ func MarshalUnresolvedEvent(event *model.UnresolvedEvent, payload interface{}) (
 	if err != nil {
 		return nil, err
 	}
+
+	// Only log if debug is enabled since operation is expensive.
+	if log.Debug().Enabled() {
+		log.Debug().Msg(fmt.Sprintf("Marshaled %s event to protobuf:\n---\n%s\n---", event.EventType.String(), protobuf.MarshalTextString(pbevent)))
+	}
+
 	return bytes, nil
 }
 
 // Unmarshal encoded unresolved event.
 func UnmarshalUnresolvedEvent(encoded []byte) (*model.UnresolvedEvent, error) {
+	// Unmarshal protobuf event.
 	pbevent := &PUnresolvedEvent{}
 	err := proto.Unmarshal(encoded, pbevent)
 	if err != nil {
 		return nil, err
 	}
+
+	// Decode event type.
 	etype := model.EventType(pbevent.EventType)
+	log.Info().Msg(fmt.Sprintf("Event type %d -> %d", pbevent.EventType, etype))
+
+	// Only log if debug is enabled since operation is expensive.
+	if log.Debug().Enabled() {
+		log.Debug().Msg(fmt.Sprintf("Unmarshaled %s event from protobuf:\n---\n%s\n---", etype.String(), protobuf.MarshalTextString(pbevent)))
+	}
+
+	// Unmarshal payload.
 	payload, err := UnmarshalPayloadForEventType(etype, pbevent.Payload)
 	if err != nil {
 		return nil, err
@@ -121,12 +182,11 @@ func UnmarshalUnresolvedEvent(encoded []byte) (*model.UnresolvedEvent, error) {
 		AltId:         pbevent.AltId,
 		Device:        pbevent.Device,
 		Assignment:    pbevent.Assignment,
-		Customer:      pbevent.Customer,
-		Area:          pbevent.Area,
-		Asset:         pbevent.Asset,
 		OccurredTime:  occtime,
 		ProcessedTime: proctime,
+		EventType:     etype,
 		Payload:       payload,
 	}
+
 	return event, nil
 }

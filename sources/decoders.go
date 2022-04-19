@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/devicechain-io/dc-event-sources/model"
-	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -25,9 +24,6 @@ type JsonEvent struct {
 	AltId        *string                `json:"altId,omitempty"`
 	Device       string                 `json:"device"`
 	Assignment   *string                `json:"assignment,omitempty"`
-	Customer     *string                `json:"customer,omitempty"`
-	Area         *string                `json:"area,omitempty"`
-	Asset        *string                `json:"asset,omitempty"`
 	OccurredTime *string                `json:"occurredTime,omitempty"`
 	EventType    string                 `json:"eventType"`
 	Payload      map[string]interface{} `json:"payload"`
@@ -61,8 +57,51 @@ func NewJsonDecoder(config map[string]string) *JsonDecoder {
 	}
 }
 
+// Builds a new assignment payload from the json content.
+func (jd *JsonDecoder) BuildNewAssignmentPayload(source *JsonEvent) (*model.NewAssignmentPayload, error) {
+	payload := &model.NewAssignmentPayload{}
+
+	// Any value works as true, but assume false if not passed.
+	if _, ok := source.Payload["deactivateExisting"]; ok {
+		payload.DeactivateExisting = true
+	} else {
+		payload.DeactivateExisting = false
+	}
+
+	if dgroup, ok := source.Payload["deviceGroup"]; ok {
+		str := fmt.Sprintf("%v", dgroup)
+		payload.DeviceGroup = &str
+	}
+	if asset, ok := source.Payload["asset"]; ok {
+		str := fmt.Sprintf("%v", asset)
+		payload.Asset = &str
+	}
+	if agroup, ok := source.Payload["assetGroup"]; ok {
+		str := fmt.Sprintf("%v", agroup)
+		payload.AssetGroup = &str
+	}
+	if cust, ok := source.Payload["customer"]; ok {
+		str := fmt.Sprintf("%v", cust)
+		payload.Customer = &str
+	}
+	if cgroup, ok := source.Payload["customerGroup"]; ok {
+		str := fmt.Sprintf("%v", cgroup)
+		payload.CustomerGroup = &str
+	}
+	if area, ok := source.Payload["area"]; ok {
+		str := fmt.Sprintf("%v", area)
+		payload.Customer = &str
+	}
+	if agroup, ok := source.Payload["areaGroup"]; ok {
+		str := fmt.Sprintf("%v", agroup)
+		payload.CustomerGroup = &str
+	}
+
+	return payload, nil
+}
+
 // Parses a location event.
-func (jd *JsonDecoder) NewLocationPayload(source *JsonEvent) (*model.LocationPayload, error) {
+func (jd *JsonDecoder) BuildLocationPayload(source *JsonEvent) (*model.LocationPayload, error) {
 	payload := &model.LocationPayload{}
 
 	if latitude, ok := source.Payload["latitude"]; ok {
@@ -100,9 +139,6 @@ func (jd *JsonDecoder) ParseEvent(payload []byte) (*JsonEvent, error) {
 	if err != nil {
 		return nil, err
 	}
-	if log.Debug().Enabled() {
-		log.Debug().Msg(fmt.Sprintf("Parsed JSON event:\n\n%+v\n", jevent))
-	}
 	return jevent, nil
 }
 
@@ -112,9 +148,6 @@ func (jd *JsonDecoder) AssembleEvent(jevent *JsonEvent) (*model.UnresolvedEvent,
 		AltId:      jevent.AltId,
 		Device:     jevent.Device,
 		Assignment: jevent.Assignment,
-		Customer:   jevent.Customer,
-		Area:       jevent.Area,
-		Asset:      jevent.Asset,
 	}
 	if etype, ok := model.EventTypesByName[jevent.EventType]; ok {
 		event.EventType = etype
@@ -149,8 +182,14 @@ func (jd *JsonDecoder) Decode(payload []byte) (*model.UnresolvedEvent, interface
 
 	// Create payload based on event type.
 	switch event.EventType {
+	case model.NewAssignment:
+		payload, err := jd.BuildNewAssignmentPayload(jevent)
+		if err != nil {
+			return nil, nil, err
+		}
+		return event, payload, nil
 	case model.Location:
-		payload, err := jd.NewLocationPayload(jevent)
+		payload, err := jd.BuildLocationPayload(jevent)
 		if err != nil {
 			return nil, nil, err
 		}

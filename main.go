@@ -143,9 +143,6 @@ func onEventDecoded(source string, event *model.UnresolvedEvent, payload interfa
 	DecodedCounter.WithLabelValues(source).Inc()
 
 	event.Source = source
-	if log.Debug().Enabled() {
-		log.Debug().Msg(fmt.Sprintf("Successfully decoded event: %+v payload: %+v", event, payload))
-	}
 
 	// Marshal event message to protobuf.
 	bytes, err := esproto.MarshalUnresolvedEvent(event, payload)
@@ -161,7 +158,6 @@ func onEventDecoded(source string, event *model.UnresolvedEvent, payload interfa
 	err = InboundEventsWriter.WriteMessages(context.Background(), msg)
 	if err != nil {
 		log.Error().Err(err).Msg("unable to send inbound event message to kafka")
-
 	}
 }
 

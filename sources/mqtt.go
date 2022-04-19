@@ -67,7 +67,7 @@ func NewMqttEventSource(id string, config map[string]string, decoder Decoder,
 // Called when message is received from topic.
 func (es *MqttEventSource) onMessage(client mqtt.Client, msg mqtt.Message) {
 	if log.Debug().Enabled() {
-		log.Debug().Msg(fmt.Sprintf("Received message: %s from topic: %s\n", msg.Payload(), msg.Topic()))
+		log.Debug().Msg(fmt.Sprintf("Received message:\n%s from MQTT topic: %s\n", msg.Payload(), msg.Topic()))
 	}
 	es.received(es.Id, msg.Payload())
 	es.messages <- msg.Payload()

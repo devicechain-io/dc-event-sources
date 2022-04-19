@@ -15,7 +15,8 @@ type EventType int64
 // Enumeration of event types.
 //go:generate stringer -type=EventType
 const (
-	Location EventType = iota
+	NewAssignment EventType = iota
+	Location
 	Measurement
 	Alert
 	StateChange
@@ -31,16 +32,25 @@ type UnresolvedEvent struct {
 	AltId         *string
 	Device        string
 	Assignment    *string
-	Customer      *string
-	Area          *string
-	Asset         *string
 	OccurredTime  time.Time
 	ProcessedTime time.Time
 	EventType     EventType
 	Payload       interface{}
 }
 
-// Payload for location event.
+// Payload for creating a new device assignment.
+type NewAssignmentPayload struct {
+	DeactivateExisting bool
+	DeviceGroup        *string
+	Asset              *string
+	AssetGroup         *string
+	Customer           *string
+	CustomerGroup      *string
+	Area               *string
+	AreaGroup          *string
+}
+
+// Payload creating a new location.
 type LocationPayload struct {
 	Latitude  *string
 	Longitude *string
@@ -50,6 +60,7 @@ type LocationPayload struct {
 // Initializer.
 func init() {
 	EventTypesByName = make(map[string]EventType)
+	EventTypesByName[NewAssignment.String()] = NewAssignment
 	EventTypesByName[Location.String()] = Location
 	EventTypesByName[Measurement.String()] = Measurement
 	EventTypesByName[Alert.String()] = Alert

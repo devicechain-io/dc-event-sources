@@ -11,13 +11,24 @@ message PUnresolvedEvent {
     optional string alt_id = 2;
     string device = 3;
     optional string assignment = 4;
+    string occurred_time = 5;
+    string processed_time = 6;
+    int64 event_type = 7;
+    bytes payload = 8;
+}
+
+/**
+ * Payload for creating a new device assignment.
+ */
+message PNewAssignmentPayload {
+    bool deactivateExisting = 1;
+    optional string deviceGroup = 2;
+    optional string asset = 3;
+    optional string assetGroup = 4;
     optional string customer = 5;
-    optional string area = 6;
-    optional string asset = 7;
-    string occurred_time = 8;
-    string processed_time = 9;
-    int64 event_type = 10;
-    bytes payload = 12;
+    optional string customerGroup = 6;
+    optional string area = 7;
+    optional string areaGroup = 8;
 }
 
 /**
