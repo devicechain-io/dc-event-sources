@@ -36,7 +36,7 @@ var (
 	KakfaManager   *kcore.KafkaManager
 
 	// Kafka.
-	InboundEventsWriter *kafka.Writer
+	InboundEventsWriter kcore.KafkaWriter
 
 	// Metrics
 	MessagesCounter     *prometheus.CounterVec
@@ -143,9 +143,10 @@ func onEventDecoded(source string, event *model.UnresolvedEvent, payload interfa
 	DecodedCounter.WithLabelValues(source).Inc()
 
 	event.Source = source
+	event.Payload = payload
 
 	// Marshal event message to protobuf.
-	bytes, err := esproto.MarshalUnresolvedEvent(event, payload)
+	bytes, err := esproto.MarshalUnresolvedEvent(event)
 	if err != nil {
 		log.Error().Err(err).Msg("unable to marshal event to protobuf")
 	}

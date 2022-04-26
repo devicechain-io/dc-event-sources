@@ -19,7 +19,8 @@ import (
 )
 
 const (
-	TYPE_MQTT = "mqtt"
+	TYPE_MQTT           = "mqtt"
+	DECODE_WORKER_COUNT = 5
 )
 
 type MqttEventSource struct {
@@ -114,7 +115,7 @@ func (es *MqttEventSource) initializeDecodeWorkers() {
 	// Make channels and workers for distributed processing.
 	es.messages = make(chan []byte, 100)
 	es.workers = make([]*DecodeWorker, 0)
-	for w := 1; w <= 5; w++ {
+	for w := 1; w <= DECODE_WORKER_COUNT; w++ {
 		worker := NewDecodeWorker(w, es.Id, es.Decoder, es.messages, es.decoded, es.failed)
 		es.workers = append(es.workers, worker)
 		go worker.Process()

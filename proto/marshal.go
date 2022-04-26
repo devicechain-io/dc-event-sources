@@ -113,8 +113,8 @@ func UnmarshalPayloadForEventType(etype model.EventType, payload []byte) (interf
 }
 
 // Marshal an unresolved event to protobuf bytes.
-func MarshalUnresolvedEvent(event *model.UnresolvedEvent, payload interface{}) ([]byte, error) {
-	plbytes, err := MarshalPayloadForEventType(event.EventType, payload)
+func MarshalUnresolvedEvent(event *model.UnresolvedEvent) ([]byte, error) {
+	plbytes, err := MarshalPayloadForEventType(event.EventType, event.Payload)
 	if err != nil {
 		return nil, err
 	}

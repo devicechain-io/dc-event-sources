@@ -2,6 +2,8 @@ syntax="proto3";
 
 option go_package = "/proto";
 
+package io.devicechain.eventsources;
+
 /**
  * Unresolved event that has been decoded by
  * an event source.
