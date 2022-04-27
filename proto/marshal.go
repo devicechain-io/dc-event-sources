@@ -11,8 +11,6 @@ import (
 	"time"
 
 	"github.com/devicechain-io/dc-event-sources/model"
-	protobuf "github.com/golang/protobuf/proto"
-	"github.com/rs/zerolog/log"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -137,11 +135,6 @@ func MarshalUnresolvedEvent(event *model.UnresolvedEvent) ([]byte, error) {
 		return nil, err
 	}
 
-	// Only log if debug is enabled since operation is expensive.
-	if log.Debug().Enabled() {
-		log.Debug().Msg(fmt.Sprintf("Marshaled %s event to protobuf:\n---\n%s\n---", event.EventType.String(), protobuf.MarshalTextString(pbevent)))
-	}
-
 	return bytes, nil
 }
 
@@ -156,12 +149,6 @@ func UnmarshalUnresolvedEvent(encoded []byte) (*model.UnresolvedEvent, error) {
 
 	// Decode event type.
 	etype := model.EventType(pbevent.EventType)
-	log.Info().Msg(fmt.Sprintf("Event type %d -> %d", pbevent.EventType, etype))
-
-	// Only log if debug is enabled since operation is expensive.
-	if log.Debug().Enabled() {
-		log.Debug().Msg(fmt.Sprintf("Unmarshaled %s event from protobuf:\n---\n%s\n---", etype.String(), protobuf.MarshalTextString(pbevent)))
-	}
 
 	// Unmarshal payload.
 	payload, err := UnmarshalPayloadForEventType(etype, pbevent.Payload)

@@ -10,7 +10,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"time"
 
 	gql "github.com/graph-gophers/graphql-go"
 	"github.com/rs/zerolog/log"
@@ -174,10 +173,7 @@ func onEventDecodeFailed(source string, raw []byte, err error) {
 
 // Create kafka components used by this microservice.
 func createKafkaComponents(kmgr *kcore.KafkaManager) error {
-	ievents, err := kmgr.NewWriter(
-		kmgr.NewScopedTopic(config.KAFKA_TOPIC_INBOUND_EVENTS),
-		Configuration.InboundEventBatching.MaxBatchSize,
-		time.Duration(Configuration.InboundEventBatching.BatchTimeoutMs)*time.Millisecond)
+	ievents, err := kmgr.NewWriter(kmgr.NewScopedTopic(config.KAFKA_TOPIC_INBOUND_EVENTS))
 	if err != nil {
 		return err
 	}
