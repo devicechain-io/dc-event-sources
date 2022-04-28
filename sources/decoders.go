@@ -9,7 +9,6 @@ package sources
 import (
 	"encoding/json"
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/devicechain-io/dc-event-sources/model"
@@ -27,6 +26,19 @@ type JsonEvent struct {
 	OccurredTime *string                `json:"occurredTime,omitempty"`
 	EventType    string                 `json:"eventType"`
 	Payload      map[string]interface{} `json:"payload"`
+}
+
+// Payload expected for events passed in json format.
+type JsonLocationEntry struct {
+	Latitude     *string `json:"latitude,omitempty"`
+	Longitude    *string `json:"longitude,omitempty"`
+	Elevation    *string `json:"elevation,omitempty"`
+	OccurredTime *string `json:"occurredTime,omitempty"`
+}
+
+// Payload expected for events passed in json format.
+type JsonLocationsPayload struct {
+	Entries []JsonLocationEntry `json:"entries"`
 }
 
 // Interface implemented by all decoders.
@@ -101,34 +113,13 @@ func (jd *JsonDecoder) BuildNewAssignmentPayload(source *JsonEvent) (*model.NewA
 }
 
 // Parses a location event.
-func (jd *JsonDecoder) BuildLocationPayload(source *JsonEvent) (*model.LocationPayload, error) {
-	payload := &model.LocationPayload{}
-
-	if latitude, ok := source.Payload["latitude"]; ok {
-		latstr := fmt.Sprintf("%v", latitude)
-		_, err := strconv.ParseFloat(latstr, 64)
-		if err != nil {
-			return nil, err
-		}
-		payload.Latitude = &latstr
+func (jd *JsonDecoder) BuildLocationsPayload(source *JsonEvent) (*model.LocationsPayload, error) {
+	locbytes, err := json.Marshal(source.Payload)
+	if err != nil {
+		return nil, err
 	}
-	if longitude, ok := source.Payload["longitude"]; ok {
-		lonstr := fmt.Sprintf("%v", longitude)
-		_, err := strconv.ParseFloat(lonstr, 64)
-		if err != nil {
-			return nil, err
-		}
-		payload.Longitude = &lonstr
-	}
-	if elevation, ok := source.Payload["elevation"]; ok {
-		elestr := fmt.Sprintf("%v", elevation)
-		_, err := strconv.ParseFloat(elestr, 64)
-		if err != nil {
-			return nil, err
-		}
-		payload.Elevation = &elestr
-	}
-
+	payload := &model.LocationsPayload{}
+	json.Unmarshal(locbytes, payload)
 	return payload, nil
 }
 
@@ -189,7 +180,7 @@ func (jd *JsonDecoder) Decode(payload []byte) (*model.UnresolvedEvent, interface
 		}
 		return event, payload, nil
 	case model.Location:
-		payload, err := jd.BuildLocationPayload(jevent)
+		payload, err := jd.BuildLocationsPayload(jevent)
 		if err != nil {
 			return nil, nil, err
 		}

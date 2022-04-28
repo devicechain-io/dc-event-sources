@@ -34,10 +34,51 @@ message PNewAssignmentPayload {
 }
 
 /**
- * Payload for a location event.
+ * Single location entry for a location payload.
  */
-message PLocationPayload {
+message PLocationEntry {
     optional string latitude = 1;
     optional string longitude = 2;
     optional string elevation = 3;
+    optional string occurred_time = 4;
+}
+
+/**
+ * Payload for a location event.
+ */
+message PLocationsPayload {
+    repeated PLocationEntry entries = 1;
+}
+
+/**
+ * Single measurement entry for a measurement payload.
+ */
+message PMeasurementsEntry {
+    map<string, string> measurements = 1;
+    optional string occurred_time = 2;
+}
+
+/**
+ * Payload for a measurement event.
+ */
+message PMeasurementsPayload {
+    repeated PMeasurementsEntry entries = 1;
+}
+
+/**
+ * Single alert entry for an alerts payload.
+ */
+message PAlertEntry {
+    string type = 1;
+    uint32 level = 2;
+    string message = 3;
+    string source = 4;
+    optional string occurred_time = 5;
+}
+
+/**
+ * Payload for an alert event.
+ */
+message PAlertsPayload {
+    repeated PAlertEntry entries = 1;
 }

@@ -50,11 +50,17 @@ type NewAssignmentPayload struct {
 	AreaGroup          *string
 }
 
+// Information for a location entry.
+type LocationEntry struct {
+	Latitude     *string
+	Longitude    *string
+	Elevation    *string
+	OccurredTime *string
+}
+
 // Payload creating a new location.
-type LocationPayload struct {
-	Latitude  *string
-	Longitude *string
-	Elevation *string
+type LocationsPayload struct {
+	Entries []LocationEntry
 }
 
 // Initializer.

@@ -34,13 +34,18 @@ func MarshalPayloadForNewAssignmentEvent(payload *model.NewAssignmentPayload) ([
 }
 
 // Marshal payload for a location event.
-func MarshalPayloadForLocationEvent(payload *model.LocationPayload) ([]byte, error) {
-	pbloc := &PLocationPayload{
-		Latitude:  payload.Latitude,
-		Longitude: payload.Longitude,
-		Elevation: payload.Elevation,
+func MarshalPayloadForLocationEvent(payload *model.LocationsPayload) ([]byte, error) {
+	pbpayload := &PLocationsPayload{}
+	for _, entry := range payload.Entries {
+		pbentry := &PLocationEntry{
+			Latitude:     entry.Latitude,
+			Longitude:    entry.Longitude,
+			Elevation:    entry.Elevation,
+			OccurredTime: entry.OccurredTime,
+		}
+		pbpayload.Entries = append(pbpayload.Entries, pbentry)
 	}
-	bytes, err := proto.Marshal(pbloc)
+	bytes, err := proto.Marshal(pbpayload)
 	if err != nil {
 		return nil, err
 	}
@@ -67,17 +72,25 @@ func UnmarshalPayloadForNewAssignmentEvent(payload []byte) (*model.NewAssignment
 }
 
 // Unmarshal a payload into a location event.
-func UnmarshalPayloadForLocationEvent(payload []byte) (*model.LocationPayload, error) {
-	pbloc := &PLocationPayload{}
-	err := proto.Unmarshal(payload, pbloc)
+func UnmarshalPayloadForLocationEvent(encoded []byte) (*model.LocationsPayload, error) {
+	pbpayload := &PLocationsPayload{}
+	err := proto.Unmarshal(encoded, pbpayload)
 	if err != nil {
 		return nil, err
 	}
-	return &model.LocationPayload{
-		Latitude:  pbloc.Latitude,
-		Longitude: pbloc.Longitude,
-		Elevation: pbloc.Elevation,
-	}, nil
+	payload := &model.LocationsPayload{}
+	entries := make([]model.LocationEntry, 0)
+	for _, pbentry := range pbpayload.Entries {
+		entry := model.LocationEntry{
+			Latitude:     pbentry.Latitude,
+			Longitude:    pbentry.Longitude,
+			Elevation:    pbentry.Elevation,
+			OccurredTime: pbentry.OccurredTime,
+		}
+		entries = append(entries, entry)
+	}
+	payload.Entries = entries
+	return payload, nil
 }
 
 // Marshals a payload based on what is expected for the given event type.
@@ -89,7 +102,7 @@ func MarshalPayloadForEventType(etype model.EventType, payload interface{}) ([]b
 		}
 		return nil, fmt.Errorf("invalid location payload: %+v", payload)
 	case model.Location:
-		if locpayload, ok := payload.(*model.LocationPayload); ok {
+		if locpayload, ok := payload.(*model.LocationsPayload); ok {
 			return MarshalPayloadForLocationEvent(locpayload)
 		}
 		return nil, fmt.Errorf("invalid location payload: %+v", payload)
