@@ -28,19 +28,6 @@ type JsonEvent struct {
 	Payload      map[string]interface{} `json:"payload"`
 }
 
-// Payload expected for events passed in json format.
-type JsonLocationEntry struct {
-	Latitude     *string `json:"latitude,omitempty"`
-	Longitude    *string `json:"longitude,omitempty"`
-	Elevation    *string `json:"elevation,omitempty"`
-	OccurredTime *string `json:"occurredTime,omitempty"`
-}
-
-// Payload expected for events passed in json format.
-type JsonLocationsPayload struct {
-	Entries []JsonLocationEntry `json:"entries"`
-}
-
 // Interface implemented by all decoders.
 type Decoder interface {
 	// Decodes a binary payload into an event.
@@ -112,13 +99,35 @@ func (jd *JsonDecoder) BuildNewAssignmentPayload(source *JsonEvent) (*model.NewA
 	return payload, nil
 }
 
-// Parses a location event.
+// Parses a locations event.
 func (jd *JsonDecoder) BuildLocationsPayload(source *JsonEvent) (*model.LocationsPayload, error) {
 	locbytes, err := json.Marshal(source.Payload)
 	if err != nil {
 		return nil, err
 	}
 	payload := &model.LocationsPayload{}
+	json.Unmarshal(locbytes, payload)
+	return payload, nil
+}
+
+// Parses a measurements event.
+func (jd *JsonDecoder) BuildMeasurementsPayload(source *JsonEvent) (*model.MeasurementsPayload, error) {
+	locbytes, err := json.Marshal(source.Payload)
+	if err != nil {
+		return nil, err
+	}
+	payload := &model.MeasurementsPayload{}
+	json.Unmarshal(locbytes, payload)
+	return payload, nil
+}
+
+// Parses an alerts event.
+func (jd *JsonDecoder) BuildAlertsPayload(source *JsonEvent) (*model.AlertsPayload, error) {
+	locbytes, err := json.Marshal(source.Payload)
+	if err != nil {
+		return nil, err
+	}
+	payload := &model.AlertsPayload{}
 	json.Unmarshal(locbytes, payload)
 	return payload, nil
 }
@@ -181,6 +190,18 @@ func (jd *JsonDecoder) Decode(payload []byte) (*model.UnresolvedEvent, interface
 		return event, payload, nil
 	case model.Location:
 		payload, err := jd.BuildLocationsPayload(jevent)
+		if err != nil {
+			return nil, nil, err
+		}
+		return event, payload, nil
+	case model.Measurement:
+		payload, err := jd.BuildMeasurementsPayload(jevent)
+		if err != nil {
+			return nil, nil, err
+		}
+		return event, payload, nil
+	case model.Alert:
+		payload, err := jd.BuildAlertsPayload(jevent)
 		if err != nil {
 			return nil, nil, err
 		}

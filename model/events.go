@@ -58,9 +58,34 @@ type LocationEntry struct {
 	OccurredTime *string
 }
 
-// Payload creating a new location.
+// Payload creating new locations.
 type LocationsPayload struct {
 	Entries []LocationEntry
+}
+
+// Information for a measurements entry.
+type MeasurementsEntry struct {
+	Measurements map[string]string
+	OccurredTime *string
+}
+
+// Payload creating new measurements.
+type MeasurementsPayload struct {
+	Entries []MeasurementsEntry
+}
+
+// Information for an alert entry.
+type AlertEntry struct {
+	Type         string
+	Level        uint32
+	Message      string
+	Source       string
+	OccurredTime *string
+}
+
+// Payload creating new alerts.
+type AlertsPayload struct {
+	Entries []AlertEntry
 }
 
 // Initializer.
