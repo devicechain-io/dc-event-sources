@@ -4,7 +4,7 @@
  * Proprietary and confidential.
  */
 
-package sources
+package processor
 
 import (
 	"encoding/json"

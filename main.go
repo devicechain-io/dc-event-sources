@@ -18,8 +18,8 @@ import (
 	"github.com/devicechain-io/dc-event-sources/config"
 	"github.com/devicechain-io/dc-event-sources/graphql"
 	"github.com/devicechain-io/dc-event-sources/model"
+	processor "github.com/devicechain-io/dc-event-sources/processor"
 	esproto "github.com/devicechain-io/dc-event-sources/proto"
-	sources "github.com/devicechain-io/dc-event-sources/sources"
 	"github.com/devicechain-io/dc-microservice/core"
 	gqlcore "github.com/devicechain-io/dc-microservice/graphql"
 	kcore "github.com/devicechain-io/dc-microservice/kafka"
@@ -94,10 +94,10 @@ func initializeMetrics() {
 }
 
 // Create decoder based on event source configuration.
-func createDecoder(source config.EventSource) (sources.Decoder, error) {
+func createDecoder(source config.EventSource) (processor.Decoder, error) {
 	switch source.Decoder.Type {
-	case sources.DECODER_TYPE_JSON:
-		return sources.NewJsonDecoder(source.Decoder.Configuration), nil
+	case processor.DECODER_TYPE_JSON:
+		return processor.NewJsonDecoder(source.Decoder.Configuration), nil
 	default:
 		return nil, fmt.Errorf("unkown decoder type: %s", source.Type)
 	}
@@ -115,8 +115,8 @@ func buildEventSources() error {
 
 		// Create event source.
 		switch source.Type {
-		case sources.TYPE_MQTT:
-			mqtt, err := sources.NewMqttEventSource(source.Id, source.Configuration,
+		case processor.TYPE_MQTT:
+			mqtt, err := processor.NewMqttEventSource(source.Id, source.Configuration,
 				decoder, onMessageReceived, onEventDecoded, onEventDecodeFailed)
 			if err != nil {
 				return err
