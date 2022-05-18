@@ -39,7 +39,7 @@ type UnresolvedEvent struct {
 }
 
 // Payload for creating a new device assignment.
-type NewAssignmentPayload struct {
+type UnresolvedNewAssignmentPayload struct {
 	DeactivateExisting bool
 	DeviceGroup        *string
 	Asset              *string
@@ -51,7 +51,7 @@ type NewAssignmentPayload struct {
 }
 
 // Information for a location entry.
-type LocationEntry struct {
+type UnresolvedLocationEntry struct {
 	Latitude     *string
 	Longitude    *string
 	Elevation    *string
@@ -59,23 +59,23 @@ type LocationEntry struct {
 }
 
 // Payload creating new locations.
-type LocationsPayload struct {
-	Entries []LocationEntry
+type UnresolvedLocationsPayload struct {
+	Entries []UnresolvedLocationEntry
 }
 
 // Information for a measurements entry.
-type MeasurementsEntry struct {
+type UnresolvedMeasurementsEntry struct {
 	Measurements map[string]string
 	OccurredTime *string
 }
 
 // Payload creating new measurements.
-type MeasurementsPayload struct {
-	Entries []MeasurementsEntry
+type UnresolvedMeasurementsPayload struct {
+	Entries []UnresolvedMeasurementsEntry
 }
 
 // Information for an alert entry.
-type AlertEntry struct {
+type UnresolvedAlertEntry struct {
 	Type         string
 	Level        uint32
 	Message      string
@@ -84,8 +84,8 @@ type AlertEntry struct {
 }
 
 // Payload creating new alerts.
-type AlertsPayload struct {
-	Entries []AlertEntry
+type UnresolvedAlertsPayload struct {
+	Entries []UnresolvedAlertEntry
 }
 
 // Initializer.

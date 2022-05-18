@@ -57,8 +57,8 @@ func NewJsonDecoder(config map[string]string) *JsonDecoder {
 }
 
 // Builds a new assignment payload from the json content.
-func (jd *JsonDecoder) BuildNewAssignmentPayload(source *JsonEvent) (*model.NewAssignmentPayload, error) {
-	payload := &model.NewAssignmentPayload{}
+func (jd *JsonDecoder) BuildNewAssignmentPayload(source *JsonEvent) (*model.UnresolvedNewAssignmentPayload, error) {
+	payload := &model.UnresolvedNewAssignmentPayload{}
 
 	// Any value works as true, but assume false if not passed.
 	if _, ok := source.Payload["deactivateExisting"]; ok {
@@ -100,34 +100,34 @@ func (jd *JsonDecoder) BuildNewAssignmentPayload(source *JsonEvent) (*model.NewA
 }
 
 // Parses a locations event.
-func (jd *JsonDecoder) BuildLocationsPayload(source *JsonEvent) (*model.LocationsPayload, error) {
+func (jd *JsonDecoder) BuildLocationsPayload(source *JsonEvent) (*model.UnresolvedLocationsPayload, error) {
 	locbytes, err := json.Marshal(source.Payload)
 	if err != nil {
 		return nil, err
 	}
-	payload := &model.LocationsPayload{}
+	payload := &model.UnresolvedLocationsPayload{}
 	json.Unmarshal(locbytes, payload)
 	return payload, nil
 }
 
 // Parses a measurements event.
-func (jd *JsonDecoder) BuildMeasurementsPayload(source *JsonEvent) (*model.MeasurementsPayload, error) {
+func (jd *JsonDecoder) BuildMeasurementsPayload(source *JsonEvent) (*model.UnresolvedMeasurementsPayload, error) {
 	locbytes, err := json.Marshal(source.Payload)
 	if err != nil {
 		return nil, err
 	}
-	payload := &model.MeasurementsPayload{}
+	payload := &model.UnresolvedMeasurementsPayload{}
 	json.Unmarshal(locbytes, payload)
 	return payload, nil
 }
 
 // Parses an alerts event.
-func (jd *JsonDecoder) BuildAlertsPayload(source *JsonEvent) (*model.AlertsPayload, error) {
+func (jd *JsonDecoder) BuildAlertsPayload(source *JsonEvent) (*model.UnresolvedAlertsPayload, error) {
 	locbytes, err := json.Marshal(source.Payload)
 	if err != nil {
 		return nil, err
 	}
-	payload := &model.AlertsPayload{}
+	payload := &model.UnresolvedAlertsPayload{}
 	json.Unmarshal(locbytes, payload)
 	return payload, nil
 }

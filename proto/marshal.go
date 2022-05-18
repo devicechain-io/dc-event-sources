@@ -15,8 +15,8 @@ import (
 )
 
 // Marshal payload for a new assignment event.
-func MarshalPayloadForNewAssignmentEvent(payload *model.NewAssignmentPayload) ([]byte, error) {
-	pbna := &PNewAssignmentPayload{
+func MarshalPayloadForNewAssignmentEvent(payload *model.UnresolvedNewAssignmentPayload) ([]byte, error) {
+	pbna := &PUnresolvedNewAssignmentPayload{
 		DeactivateExisting: payload.DeactivateExisting,
 		DeviceGroup:        payload.DeviceGroup,
 		Asset:              payload.Asset,
@@ -34,10 +34,10 @@ func MarshalPayloadForNewAssignmentEvent(payload *model.NewAssignmentPayload) ([
 }
 
 // Marshal payload for a locations event.
-func MarshalPayloadForLocationsEvent(payload *model.LocationsPayload) ([]byte, error) {
-	pbpayload := &PLocationsPayload{}
+func MarshalPayloadForLocationsEvent(payload *model.UnresolvedLocationsPayload) ([]byte, error) {
+	pbpayload := &PUnresolvedLocationsPayload{}
 	for _, entry := range payload.Entries {
-		pbentry := &PLocationEntry{
+		pbentry := &PUnresolvedLocationEntry{
 			Latitude:     entry.Latitude,
 			Longitude:    entry.Longitude,
 			Elevation:    entry.Elevation,
@@ -53,10 +53,10 @@ func MarshalPayloadForLocationsEvent(payload *model.LocationsPayload) ([]byte, e
 }
 
 // Marshal payload for a measurements event.
-func MarshalPayloadForMeasurementsEvent(payload *model.MeasurementsPayload) ([]byte, error) {
-	pbpayload := &PMeasurementsPayload{}
+func MarshalPayloadForMeasurementsEvent(payload *model.UnresolvedMeasurementsPayload) ([]byte, error) {
+	pbpayload := &PUnresolvedMeasurementsPayload{}
 	for _, entry := range payload.Entries {
-		pbentry := &PMeasurementsEntry{
+		pbentry := &PUnresolvedMeasurementsEntry{
 			Measurements: entry.Measurements,
 			OccurredTime: entry.OccurredTime,
 		}
@@ -70,10 +70,10 @@ func MarshalPayloadForMeasurementsEvent(payload *model.MeasurementsPayload) ([]b
 }
 
 // Marshal payload for an alerts event.
-func MarshalPayloadForAlertsEvent(payload *model.AlertsPayload) ([]byte, error) {
-	pbpayload := &PAlertsPayload{}
+func MarshalPayloadForAlertsEvent(payload *model.UnresolvedAlertsPayload) ([]byte, error) {
+	pbpayload := &PUnresolvedAlertsPayload{}
 	for _, entry := range payload.Entries {
-		pbentry := &PAlertEntry{
+		pbentry := &PUnresolvedAlertEntry{
 			Type:         entry.Type,
 			Level:        entry.Level,
 			Message:      entry.Message,
@@ -90,13 +90,13 @@ func MarshalPayloadForAlertsEvent(payload *model.AlertsPayload) ([]byte, error) 
 }
 
 // Unmarshal a payload into a new assignment event.
-func UnmarshalPayloadForNewAssignmentEvent(payload []byte) (*model.NewAssignmentPayload, error) {
-	pbassn := &PNewAssignmentPayload{}
+func UnmarshalPayloadForNewAssignmentEvent(payload []byte) (*model.UnresolvedNewAssignmentPayload, error) {
+	pbassn := &PUnresolvedNewAssignmentPayload{}
 	err := proto.Unmarshal(payload, pbassn)
 	if err != nil {
 		return nil, err
 	}
-	return &model.NewAssignmentPayload{
+	return &model.UnresolvedNewAssignmentPayload{
 		DeactivateExisting: pbassn.DeactivateExisting,
 		DeviceGroup:        pbassn.DeviceGroup,
 		Asset:              pbassn.Asset,
@@ -109,16 +109,16 @@ func UnmarshalPayloadForNewAssignmentEvent(payload []byte) (*model.NewAssignment
 }
 
 // Unmarshal a payload into a locations event.
-func UnmarshalPayloadForLocationsEvent(encoded []byte) (*model.LocationsPayload, error) {
-	pbpayload := &PLocationsPayload{}
+func UnmarshalPayloadForLocationsEvent(encoded []byte) (*model.UnresolvedLocationsPayload, error) {
+	pbpayload := &PUnresolvedLocationsPayload{}
 	err := proto.Unmarshal(encoded, pbpayload)
 	if err != nil {
 		return nil, err
 	}
-	payload := &model.LocationsPayload{}
-	entries := make([]model.LocationEntry, 0)
+	payload := &model.UnresolvedLocationsPayload{}
+	entries := make([]model.UnresolvedLocationEntry, 0)
 	for _, pbentry := range pbpayload.Entries {
-		entry := model.LocationEntry{
+		entry := model.UnresolvedLocationEntry{
 			Latitude:     pbentry.Latitude,
 			Longitude:    pbentry.Longitude,
 			Elevation:    pbentry.Elevation,
@@ -131,16 +131,16 @@ func UnmarshalPayloadForLocationsEvent(encoded []byte) (*model.LocationsPayload,
 }
 
 // Unmarshal a payload into a measurements event.
-func UnmarshalPayloadForMeasurementsEvent(encoded []byte) (*model.MeasurementsPayload, error) {
-	pbpayload := &PMeasurementsPayload{}
+func UnmarshalPayloadForMeasurementsEvent(encoded []byte) (*model.UnresolvedMeasurementsPayload, error) {
+	pbpayload := &PUnresolvedMeasurementsPayload{}
 	err := proto.Unmarshal(encoded, pbpayload)
 	if err != nil {
 		return nil, err
 	}
-	payload := &model.MeasurementsPayload{}
-	entries := make([]model.MeasurementsEntry, 0)
+	payload := &model.UnresolvedMeasurementsPayload{}
+	entries := make([]model.UnresolvedMeasurementsEntry, 0)
 	for _, pbentry := range pbpayload.Entries {
-		entry := model.MeasurementsEntry{
+		entry := model.UnresolvedMeasurementsEntry{
 			Measurements: pbentry.Measurements,
 			OccurredTime: pbentry.OccurredTime,
 		}
@@ -151,16 +151,16 @@ func UnmarshalPayloadForMeasurementsEvent(encoded []byte) (*model.MeasurementsPa
 }
 
 // Unmarshal a payload into an alerts event.
-func UnmarshalPayloadForAlertsEvent(encoded []byte) (*model.AlertsPayload, error) {
-	pbpayload := &PAlertsPayload{}
+func UnmarshalPayloadForAlertsEvent(encoded []byte) (*model.UnresolvedAlertsPayload, error) {
+	pbpayload := &PUnresolvedAlertsPayload{}
 	err := proto.Unmarshal(encoded, pbpayload)
 	if err != nil {
 		return nil, err
 	}
-	payload := &model.AlertsPayload{}
-	entries := make([]model.AlertEntry, 0)
+	payload := &model.UnresolvedAlertsPayload{}
+	entries := make([]model.UnresolvedAlertEntry, 0)
 	for _, pbentry := range pbpayload.Entries {
-		entry := model.AlertEntry{
+		entry := model.UnresolvedAlertEntry{
 			Type:         pbentry.Type,
 			Level:        pbentry.Level,
 			Message:      pbentry.Message,
@@ -173,36 +173,36 @@ func UnmarshalPayloadForAlertsEvent(encoded []byte) (*model.AlertsPayload, error
 	return payload, nil
 }
 
-// Marshals a payload based on what is expected for the given event type.
-func MarshalPayloadForEventType(etype model.EventType, payload interface{}) ([]byte, error) {
+// Marshal unresolved payload based on event type.
+func MarshalUnresolvedPayload(etype model.EventType, payload interface{}) ([]byte, error) {
 	switch etype {
 	case model.NewAssignment:
-		if napayload, ok := payload.(*model.NewAssignmentPayload); ok {
+		if napayload, ok := payload.(*model.UnresolvedNewAssignmentPayload); ok {
 			return MarshalPayloadForNewAssignmentEvent(napayload)
 		}
 		return nil, fmt.Errorf("invalid location payload: %+v", payload)
 	case model.Location:
-		if locpayload, ok := payload.(*model.LocationsPayload); ok {
+		if locpayload, ok := payload.(*model.UnresolvedLocationsPayload); ok {
 			return MarshalPayloadForLocationsEvent(locpayload)
 		}
 		return nil, fmt.Errorf("invalid location payload: %+v", payload)
 	case model.Measurement:
-		if mxpayload, ok := payload.(*model.MeasurementsPayload); ok {
+		if mxpayload, ok := payload.(*model.UnresolvedMeasurementsPayload); ok {
 			return MarshalPayloadForMeasurementsEvent(mxpayload)
 		}
 		return nil, fmt.Errorf("invalid location payload: %+v", payload)
 	case model.Alert:
-		if apayload, ok := payload.(*model.AlertsPayload); ok {
+		if apayload, ok := payload.(*model.UnresolvedAlertsPayload); ok {
 			return MarshalPayloadForAlertsEvent(apayload)
 		}
 		return nil, fmt.Errorf("invalid location payload: %+v", payload)
 	default:
-		return nil, fmt.Errorf("unable to marshal payload for event type: %s", etype.String())
+		return nil, fmt.Errorf("unable to marshal unresolved payload for event type: %s", etype.String())
 	}
 }
 
-// Unmarshal payload based on event type.
-func UnmarshalPayloadForEventType(etype model.EventType, payload []byte) (interface{}, error) {
+// Unmarshal unresolved payload based on event type.
+func UnmarshalUnresolvedPayload(etype model.EventType, payload []byte) (interface{}, error) {
 	switch etype {
 	case model.NewAssignment:
 		return UnmarshalPayloadForNewAssignmentEvent(payload)
@@ -213,13 +213,13 @@ func UnmarshalPayloadForEventType(etype model.EventType, payload []byte) (interf
 	case model.Alert:
 		return UnmarshalPayloadForAlertsEvent(payload)
 	default:
-		return nil, fmt.Errorf("unable to unmarshal payload for event type: %s", etype.String())
+		return nil, fmt.Errorf("unable to unmarshal unresolved payload for event type: %s", etype.String())
 	}
 }
 
 // Marshal an unresolved event to protobuf bytes.
 func MarshalUnresolvedEvent(event *model.UnresolvedEvent) ([]byte, error) {
-	plbytes, err := MarshalPayloadForEventType(event.EventType, event.Payload)
+	plbytes, err := MarshalUnresolvedPayload(event.EventType, event.Payload)
 	if err != nil {
 		return nil, err
 	}
@@ -258,7 +258,7 @@ func UnmarshalUnresolvedEvent(encoded []byte) (*model.UnresolvedEvent, error) {
 	etype := model.EventType(pbevent.EventType)
 
 	// Unmarshal payload.
-	payload, err := UnmarshalPayloadForEventType(etype, pbevent.Payload)
+	payload, err := UnmarshalUnresolvedPayload(etype, pbevent.Payload)
 	if err != nil {
 		return nil, err
 	}
