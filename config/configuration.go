@@ -8,6 +8,7 @@ package config
 
 const (
 	KAFKA_TOPIC_INBOUND_EVENTS = "inbound-events"
+	KAFKA_TOPIC_FAILED_DECODE  = "failed-decode"
 )
 
 // Decodes event payloads into standardized format.

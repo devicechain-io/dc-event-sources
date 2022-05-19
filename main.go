@@ -36,6 +36,7 @@ var (
 
 	// Kafka.
 	InboundEventsWriter kcore.KafkaWriter
+	FailedDecodeWriter  kcore.KafkaWriter
 
 	// Metrics
 	MessagesCounter     *prometheus.CounterVec
@@ -156,9 +157,7 @@ func onEventDecoded(source string, event *model.UnresolvedEvent, payload interfa
 		Value: bytes,
 	}
 	err = InboundEventsWriter.WriteMessages(context.Background(), msg)
-	if err != nil {
-		log.Error().Err(err).Msg("unable to send inbound event message to kafka")
-	}
+	InboundEventsWriter.HandleResponse(err)
 }
 
 // Handle failed decoding.
@@ -166,9 +165,13 @@ func onEventDecodeFailed(source string, raw []byte, err error) {
 	// Increment counter for metrics.
 	FailedDecodeCounter.WithLabelValues(source).Inc()
 
-	if log.Debug().Enabled() {
-		log.Error().Err(err).Msg("Failed to decode event payload.")
+	// Create and deliver message.
+	msg := kafka.Message{
+		Key:   []byte(source),
+		Value: raw,
 	}
+	senderr := FailedDecodeWriter.WriteMessages(context.Background(), msg)
+	FailedDecodeWriter.HandleResponse(senderr)
 }
 
 // Create kafka components used by this microservice.
@@ -178,6 +181,12 @@ func createKafkaComponents(kmgr *kcore.KafkaManager) error {
 		return err
 	}
 	InboundEventsWriter = ievents
+
+	failed, err := kmgr.NewWriter(kmgr.NewScopedTopic(config.KAFKA_TOPIC_FAILED_DECODE))
+	if err != nil {
+		return err
+	}
+	FailedDecodeWriter = failed
 	return nil
 }
 
