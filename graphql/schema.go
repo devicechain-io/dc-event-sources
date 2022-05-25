@@ -10,7 +10,7 @@ import (
 	_ "embed"
 )
 
-//go:embed schema.gql
+//go:embed schema.graphql
 var SchemaContent string
 
 type SchemaResolver struct{}
