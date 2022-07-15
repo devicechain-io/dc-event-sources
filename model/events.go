@@ -1,7 +1,17 @@
 /**
- * Copyright ©2022 DeviceChain - All Rights Reserved.
- * Unauthorized copying of this file, via any medium is strictly prohibited.
- * Proprietary and confidential.
+ * Copyright © 2022 DeviceChain
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package model
@@ -15,7 +25,7 @@ type EventType int64
 // Enumeration of event types.
 //go:generate stringer -type=EventType
 const (
-	NewAssignment EventType = iota
+	NewRelationship EventType = iota
 	Location
 	Measurement
 	Alert
@@ -31,23 +41,24 @@ type UnresolvedEvent struct {
 	Source        string
 	AltId         *string
 	Device        string
-	Assignment    *string
+	Relationship  *string
 	OccurredTime  time.Time
 	ProcessedTime time.Time
 	EventType     EventType
 	Payload       interface{}
 }
 
-// Payload for creating a new device assignment.
-type UnresolvedNewAssignmentPayload struct {
-	DeactivateExisting bool
-	DeviceGroup        *string
-	Asset              *string
-	AssetGroup         *string
-	Customer           *string
-	CustomerGroup      *string
-	Area               *string
-	AreaGroup          *string
+// Payload for creating a new device relationship.
+type UnresolvedNewRelationshipPayload struct {
+	DeviceRelationshipType string
+	TargetDevice           *string
+	TargetDeviceGroup      *string
+	TargetAsset            *string
+	TargetAssetGroup       *string
+	TargetCustomer         *string
+	TargetCustomerGroup    *string
+	TargetArea             *string
+	TargetAreaGroup        *string
 }
 
 // Information for a location entry.
@@ -91,7 +102,7 @@ type UnresolvedAlertsPayload struct {
 // Initializer.
 func init() {
 	EventTypesByName = make(map[string]EventType)
-	EventTypesByName[NewAssignment.String()] = NewAssignment
+	EventTypesByName[NewRelationship.String()] = NewRelationship
 	EventTypesByName[Location.String()] = Location
 	EventTypesByName[Measurement.String()] = Measurement
 	EventTypesByName[Alert.String()] = Alert

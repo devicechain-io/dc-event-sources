@@ -1,7 +1,17 @@
 /**
- * Copyright ©2022 DeviceChain - All Rights Reserved.
- * Unauthorized copying of this file, via any medium is strictly prohibited.
- * Proprietary and confidential.
+ * Copyright © 2022 DeviceChain
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package processor
@@ -22,7 +32,7 @@ const (
 type JsonEvent struct {
 	AltId        *string                `json:"altId,omitempty"`
 	Device       string                 `json:"device"`
-	Assignment   *string                `json:"assignment,omitempty"`
+	Relationship *string                `json:"relationship,omitempty"`
 	OccurredTime *string                `json:"occurredTime,omitempty"`
 	EventType    string                 `json:"eventType"`
 	Payload      map[string]interface{} `json:"payload"`
@@ -56,44 +66,44 @@ func NewJsonDecoder(config map[string]string) *JsonDecoder {
 	}
 }
 
-// Builds a new assignment payload from the json content.
-func (jd *JsonDecoder) BuildNewAssignmentPayload(source *JsonEvent) (*model.UnresolvedNewAssignmentPayload, error) {
-	payload := &model.UnresolvedNewAssignmentPayload{}
-
-	// Any value works as true, but assume false if not passed.
-	if _, ok := source.Payload["deactivateExisting"]; ok {
-		payload.DeactivateExisting = true
-	} else {
-		payload.DeactivateExisting = false
+// Builds a new relationship payload from the json content.
+func (jd *JsonDecoder) BuildNewRelationshipPayload(source *JsonEvent) (*model.UnresolvedNewRelationshipPayload, error) {
+	payload := &model.UnresolvedNewRelationshipPayload{}
+	if drt, ok := source.Payload["deviceRelationshipType"]; ok {
+		str := fmt.Sprintf("%v", drt)
+		payload.DeviceRelationshipType = str
 	}
-
-	if dgroup, ok := source.Payload["deviceGroup"]; ok {
+	if device, ok := source.Payload["targetDevice"]; ok {
+		str := fmt.Sprintf("%v", device)
+		payload.TargetDevice = &str
+	}
+	if dgroup, ok := source.Payload["targetDeviceGroup"]; ok {
 		str := fmt.Sprintf("%v", dgroup)
-		payload.DeviceGroup = &str
+		payload.TargetDeviceGroup = &str
 	}
-	if asset, ok := source.Payload["asset"]; ok {
+	if asset, ok := source.Payload["targetAsset"]; ok {
 		str := fmt.Sprintf("%v", asset)
-		payload.Asset = &str
+		payload.TargetAsset = &str
 	}
-	if agroup, ok := source.Payload["assetGroup"]; ok {
+	if agroup, ok := source.Payload["targetAssetGroup"]; ok {
 		str := fmt.Sprintf("%v", agroup)
-		payload.AssetGroup = &str
+		payload.TargetAssetGroup = &str
 	}
-	if cust, ok := source.Payload["customer"]; ok {
+	if cust, ok := source.Payload["targetCustomer"]; ok {
 		str := fmt.Sprintf("%v", cust)
-		payload.Customer = &str
+		payload.TargetCustomer = &str
 	}
-	if cgroup, ok := source.Payload["customerGroup"]; ok {
+	if cgroup, ok := source.Payload["targetCustomerGroup"]; ok {
 		str := fmt.Sprintf("%v", cgroup)
-		payload.CustomerGroup = &str
+		payload.TargetCustomerGroup = &str
 	}
-	if area, ok := source.Payload["area"]; ok {
+	if area, ok := source.Payload["targetArea"]; ok {
 		str := fmt.Sprintf("%v", area)
-		payload.Customer = &str
+		payload.TargetArea = &str
 	}
-	if agroup, ok := source.Payload["areaGroup"]; ok {
+	if agroup, ok := source.Payload["targetAreaGroup"]; ok {
 		str := fmt.Sprintf("%v", agroup)
-		payload.CustomerGroup = &str
+		payload.TargetAreaGroup = &str
 	}
 
 	return payload, nil
@@ -145,9 +155,9 @@ func (jd *JsonDecoder) ParseEvent(payload []byte) (*JsonEvent, error) {
 // Assemble an event based on json event data.
 func (jd *JsonDecoder) AssembleEvent(jevent *JsonEvent) (*model.UnresolvedEvent, error) {
 	event := &model.UnresolvedEvent{
-		AltId:      jevent.AltId,
-		Device:     jevent.Device,
-		Assignment: jevent.Assignment,
+		AltId:        jevent.AltId,
+		Device:       jevent.Device,
+		Relationship: jevent.Relationship,
 	}
 	if etype, ok := model.EventTypesByName[jevent.EventType]; ok {
 		event.EventType = etype
@@ -182,8 +192,8 @@ func (jd *JsonDecoder) Decode(payload []byte) (*model.UnresolvedEvent, interface
 
 	// Create payload based on event type.
 	switch event.EventType {
-	case model.NewAssignment:
-		payload, err := jd.BuildNewAssignmentPayload(jevent)
+	case model.NewRelationship:
+		payload, err := jd.BuildNewRelationshipPayload(jevent)
 		if err != nil {
 			return nil, nil, err
 		}

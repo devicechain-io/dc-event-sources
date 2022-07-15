@@ -12,7 +12,7 @@ message PUnresolvedEvent {
     string source_id = 1;
     optional string alt_id = 2;
     string device = 3;
-    optional string assignment = 4;
+    optional string relationship = 4;
     string occurred_time = 5;
     string processed_time = 6;
     int64 event_type = 7;
@@ -20,17 +20,18 @@ message PUnresolvedEvent {
 }
 
 /**
- * Payload for creating a new device assignment.
+ * Payload for creating a new device relationship.
  */
-message PUnresolvedNewAssignmentPayload {
-    bool deactivateExisting = 1;
-    optional string device_group = 2;
-    optional string asset = 3;
-    optional string asset_group = 4;
-    optional string customer = 5;
-    optional string customer_group = 6;
-    optional string area = 7;
-    optional string area_group = 8;
+message PUnresolvedNewRelationshipPayload {
+    string device_relationship_type = 1;
+    optional string target_device = 2;
+    optional string target_device_group = 3;
+    optional string target_asset = 4;
+    optional string target_asset_group = 5;
+    optional string target_customer = 6;
+    optional string target_customer_group = 7;
+    optional string target_area = 8;
+    optional string target_area_group = 9;
 }
 
 /**

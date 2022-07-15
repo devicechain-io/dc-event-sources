@@ -3,8 +3,8 @@ module github.com/devicechain-io/dc-event-sources
 go 1.17
 
 require (
-	github.com/devicechain-io/dc-k8s v0.0.0
-	github.com/devicechain-io/dc-microservice v0.0.0
+	github.com/devicechain-io/dc-k8s v0.0.1
+	github.com/devicechain-io/dc-microservice v0.0.1
 	github.com/eclipse/paho.mqtt.golang v1.3.5
 	github.com/graph-gophers/graphql-go v1.4.0
 	github.com/prometheus/client_golang v1.12.2
@@ -65,7 +65,7 @@ require (
 	golang.org/x/net v0.0.0-20220524220425-1d687d428aca // indirect
 	golang.org/x/oauth2 v0.0.0-20220524215830-622c5d57e401 // indirect
 	golang.org/x/sync v0.0.0-20220513210516-0976fa681c29 // indirect
-	golang.org/x/sys v0.0.0-20220520151302-bc2c85ada10a // indirect
+	golang.org/x/sys v0.0.0-20220627191245-f75cf1eec38b // indirect
 	golang.org/x/term v0.0.0-20220411215600-e5f449aeb171 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/time v0.0.0-20220411224347-583f2d630306 // indirect
@@ -88,7 +88,3 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.1 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
-
-replace github.com/devicechain-io/dc-k8s v0.0.0 => ../dc-k8s
-
-replace github.com/devicechain-io/dc-microservice v0.0.0 => ../dc-microservice

@@ -1,7 +1,17 @@
 /**
- * Copyright ©2022 DeviceChain - All Rights Reserved.
- * Unauthorized copying of this file, via any medium is strictly prohibited.
- * Proprietary and confidential.
+ * Copyright © 2022 DeviceChain
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package proto
@@ -14,17 +24,18 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-// Marshal payload for a new assignment event.
-func MarshalPayloadForNewAssignmentEvent(payload *model.UnresolvedNewAssignmentPayload) ([]byte, error) {
-	pbna := &PUnresolvedNewAssignmentPayload{
-		DeactivateExisting: payload.DeactivateExisting,
-		DeviceGroup:        payload.DeviceGroup,
-		Asset:              payload.Asset,
-		AssetGroup:         payload.AssetGroup,
-		Customer:           payload.Customer,
-		CustomerGroup:      payload.CustomerGroup,
-		Area:               payload.Area,
-		AreaGroup:          payload.AreaGroup,
+// Marshal payload for a new relationship event.
+func MarshalPayloadForNewRelationshipEvent(payload *model.UnresolvedNewRelationshipPayload) ([]byte, error) {
+	pbna := &PUnresolvedNewRelationshipPayload{
+		DeviceRelationshipType: payload.DeviceRelationshipType,
+		TargetDevice:           payload.TargetDevice,
+		TargetDeviceGroup:      payload.TargetDeviceGroup,
+		TargetAsset:            payload.TargetAsset,
+		TargetAssetGroup:       payload.TargetAssetGroup,
+		TargetCustomer:         payload.TargetCustomer,
+		TargetCustomerGroup:    payload.TargetCustomerGroup,
+		TargetArea:             payload.TargetArea,
+		TargetAreaGroup:        payload.TargetAreaGroup,
 	}
 	bytes, err := proto.Marshal(pbna)
 	if err != nil {
@@ -89,22 +100,23 @@ func MarshalPayloadForAlertsEvent(payload *model.UnresolvedAlertsPayload) ([]byt
 	return bytes, nil
 }
 
-// Unmarshal a payload into a new assignment event.
-func UnmarshalPayloadForNewAssignmentEvent(payload []byte) (*model.UnresolvedNewAssignmentPayload, error) {
-	pbassn := &PUnresolvedNewAssignmentPayload{}
+// Unmarshal a payload into a new relationship event.
+func UnmarshalPayloadForNewRelationshipEvent(payload []byte) (*model.UnresolvedNewRelationshipPayload, error) {
+	pbassn := &PUnresolvedNewRelationshipPayload{}
 	err := proto.Unmarshal(payload, pbassn)
 	if err != nil {
 		return nil, err
 	}
-	return &model.UnresolvedNewAssignmentPayload{
-		DeactivateExisting: pbassn.DeactivateExisting,
-		DeviceGroup:        pbassn.DeviceGroup,
-		Asset:              pbassn.Asset,
-		AssetGroup:         pbassn.AssetGroup,
-		Customer:           pbassn.Customer,
-		CustomerGroup:      pbassn.CustomerGroup,
-		Area:               pbassn.Area,
-		AreaGroup:          pbassn.AreaGroup,
+	return &model.UnresolvedNewRelationshipPayload{
+		DeviceRelationshipType: pbassn.DeviceRelationshipType,
+		TargetDevice:           pbassn.TargetDevice,
+		TargetDeviceGroup:      pbassn.TargetDeviceGroup,
+		TargetAsset:            pbassn.TargetAsset,
+		TargetAssetGroup:       pbassn.TargetAssetGroup,
+		TargetCustomer:         pbassn.TargetCustomer,
+		TargetCustomerGroup:    pbassn.TargetCustomerGroup,
+		TargetArea:             pbassn.TargetArea,
+		TargetAreaGroup:        pbassn.TargetAreaGroup,
 	}, nil
 }
 
@@ -176,9 +188,9 @@ func UnmarshalPayloadForAlertsEvent(encoded []byte) (*model.UnresolvedAlertsPayl
 // Marshal unresolved payload based on event type.
 func MarshalUnresolvedPayload(etype model.EventType, payload interface{}) ([]byte, error) {
 	switch etype {
-	case model.NewAssignment:
-		if napayload, ok := payload.(*model.UnresolvedNewAssignmentPayload); ok {
-			return MarshalPayloadForNewAssignmentEvent(napayload)
+	case model.NewRelationship:
+		if napayload, ok := payload.(*model.UnresolvedNewRelationshipPayload); ok {
+			return MarshalPayloadForNewRelationshipEvent(napayload)
 		}
 		return nil, fmt.Errorf("invalid location payload: %+v", payload)
 	case model.Location:
@@ -204,8 +216,8 @@ func MarshalUnresolvedPayload(etype model.EventType, payload interface{}) ([]byt
 // Unmarshal unresolved payload based on event type.
 func UnmarshalUnresolvedPayload(etype model.EventType, payload []byte) (interface{}, error) {
 	switch etype {
-	case model.NewAssignment:
-		return UnmarshalPayloadForNewAssignmentEvent(payload)
+	case model.NewRelationship:
+		return UnmarshalPayloadForNewRelationshipEvent(payload)
 	case model.Location:
 		return UnmarshalPayloadForLocationsEvent(payload)
 	case model.Measurement:
@@ -229,7 +241,7 @@ func MarshalUnresolvedEvent(event *model.UnresolvedEvent) ([]byte, error) {
 		SourceId:      event.Source,
 		AltId:         event.AltId,
 		Device:        event.Device,
-		Assignment:    event.Assignment,
+		Relationship:  event.Relationship,
 		OccurredTime:  event.OccurredTime.Format(time.RFC3339),
 		ProcessedTime: event.ProcessedTime.Format(time.RFC3339),
 		EventType:     int64(event.EventType),
@@ -275,7 +287,7 @@ func UnmarshalUnresolvedEvent(encoded []byte) (*model.UnresolvedEvent, error) {
 		Source:        pbevent.SourceId,
 		AltId:         pbevent.AltId,
 		Device:        pbevent.Device,
-		Assignment:    pbevent.Assignment,
+		Relationship:  pbevent.Relationship,
 		OccurredTime:  occtime,
 		ProcessedTime: proctime,
 		EventType:     etype,
